@@ -1,0 +1,358 @@
+/* --- COLOR PALETTE (Based on your Mind Map Image) --- */
+:root {
+    /* Backgrounds */
+    --bg: #fdfdfd; 
+    --line-color: #0089cc; /* The bright blue from your image */
+    
+    /* Text */
+    --text-main: #333333;
+    --text-white: #ffffff;
+    
+    /* Node Colors (Matching the image hierarchy) */
+    --node-center: #0089cc; /* Cyan Blue - Center */
+    --node-cat: #005f88;    /* Dark Blue - Level 1 */
+    --node-item: #ffffff;   /* White - Level 2 */
+    
+    /* UI Elements */
+    --shadow-bubble: 0 4px 10px rgba(0, 137, 204, 0.2);
+    --shadow-hover: 0 8px 15px rgba(0, 137, 204, 0.4);
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg); 
+    color: var(--text-main); 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+/* --- HEADER (Clean & Minimal) --- */
+header { 
+    background: white;
+    border-bottom: 2px solid #eee;
+    padding: 0.75rem 1.5rem; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex-shrink: 0; 
+    z-index: 20;
+}
+h1 { 
+    font-size: 1.3rem; 
+    color: var(--node-cat);
+    font-weight: 700; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+}
+.subtitle { 
+    font-size: 0.8rem; 
+    color: #888; 
+    font-weight: 400; 
+    border-left: 2px solid #ddd;
+    padding-left: 10px;
+}
+.header-right { display: flex; align-items: center; gap: 1rem; }
+
+/* Search Bar Styling */
+.search-container { position: relative; }
+.search-input {
+    padding: 8px 15px 8px 35px;
+    border: 2px solid #eee;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    width: 220px;
+    transition: all 0.2s;
+    background: #f9f9f9;
+    color: #333;
+}
+.search-input:focus {
+    outline: none;
+    border-color: var(--node-center);
+    background: white;
+    width: 250px;
+}
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+}
+
+/* Zoom Controls */
+.zoom-controls { display: flex; gap: 5px; background: #eee; padding: 4px; border-radius: 20px; }
+.zoom-btn {
+    background: white;
+    border: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--node-cat);
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.zoom-btn:hover { background: var(--node-center); color: white; }
+.zoom-level { font-size: 0.8rem; padding: 0 8px; display: flex; align-items: center; color: #555; }
+.header-hint { font-size: 0.75rem; color: #aaa; font-weight: 600; }
+
+/* --- MAIN LAYOUT --- */
+.container { 
+    display: flex; 
+    flex-direction: column; 
+    flex: 1; 
+    overflow: hidden; 
+    position: relative; 
+}
+
+/* --- THE MIND MAP AREA (Tree Panel) --- */
+.tree-panel { 
+    width: 100%;
+    height: 60%; /* Taller area for the map */
+    background: white;
+    background-image: radial-gradient(#e0f2fe 1px, transparent 1px); /* Subtle dots */
+    background-size: 30px 30px;
+    border-bottom: 1px solid #ddd;
+    overflow: auto; 
+    padding: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top */
+}
+
+.tree-content { 
+    transform-origin: top center;
+    transition: transform 0.3s ease;
+}
+
+/* --- MIND MAP CONNECTORS (The Lines) --- */
+.tree ul {
+    padding-top: 20px; 
+    position: relative;
+    transition: all 0.5s;
+    display: flex;
+    justify-content: center;
+}
+.tree li {
+    float: left; text-align: center;
+    list-style-type: none;
+    position: relative;
+    padding: 20px 5px 0 5px;
+    transition: all 0.5s;
+}
+
+/* Connecting lines */
+.tree li::before, .tree li::after {
+    content: '';
+    position: absolute; top: 0; right: 50%;
+    border-top: 2px solid var(--line-color);
+    width: 50%; height: 20px;
+}
+.tree li::after {
+    right: auto; left: 50%;
+    border-left: 2px solid var(--line-color);
+}
+.tree li:only-child::after, .tree li:only-child::before {
+    display: none;
+}
+.tree li:only-child { padding-top: 0; }
+.tree li:first-child::before, .tree li:last-child::after {
+    border: 0 none;
+}
+.tree li:last-child::before {
+    border-right: 2px solid var(--line-color);
+    border-radius: 0 5px 0 0;
+}
+.tree li:first-child::after {
+    border-radius: 5px 0 0 0;
+}
+.tree ul ul::before {
+    content: '';
+    position: absolute; top: 0; left: 50%;
+    border-left: 2px solid var(--line-color);
+    width: 0; height: 20px;
+}
+.tree ul.hidden { display: none; }
+
+/* --- THE BUBBLES (Nodes) --- */
+.node-btn { 
+    text-decoration: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50px; /* Oval/Bubble shape */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    box-shadow: var(--shadow-bubble);
+    position: relative;
+    z-index: 5;
+    outline: none;
+    border: 2px solid transparent;
+}
+
+/* 1. ROOT NODE (Big Center Bubble) */
+.node-btn[data-key="root"] {
+    width: 120px; height: 120px;
+    border-radius: 50%; /* Perfect circle */
+    background: var(--node-center);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 4px solid white;
+    box-shadow: 0 0 0 4px var(--node-center); /* Double ring effect */
+}
+
+/* 2. CATEGORY NODES (Dark Blue Bubbles) */
+.node-btn.theme-adult, 
+.node-btn.theme-ped-lgg,
+.node-btn.theme-ped-hgg,
+.node-btn.theme-circum,
+.node-btn.theme-epend,
+.node-btn.theme-embryo,
+.node-btn.theme-nerve {
+    background: var(--node-cat);
+    color: white;
+    padding: 12px 20px;
+    min-width: 100px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* 3. ITEM NODES (White Bubbles with Blue Border) */
+/* If a node is a leaf (lowest level), make it white */
+.tree ul ul ul .node-btn {
+    background: white;
+    color: var(--text-main);
+    border: 2px solid var(--node-center);
+    padding: 10px 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Interactions */
+.node-btn:hover { 
+    transform: scale(1.1); 
+    box-shadow: var(--shadow-hover);
+    z-index: 10;
+}
+.node-btn.selected {
+    background: #FFD700 !important; /* Gold for selected */
+    color: #333 !important;
+    transform: scale(1.15);
+    border-color: #333;
+    font-weight: 800;
+}
+
+/* Toggle Icon (+/-) */
+.toggle-icon {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    color: rgba(255,255,255,0.7);
+}
+.tree ul ul ul .node-btn .toggle-icon { color: var(--node-center); } /* Blue icon for white bubbles */
+
+
+/* --- DETAIL PANEL (Right/Bottom) --- */
+.detail-panel { 
+    width: 100%;
+    height: 40%; 
+    background: #f8f9fa; 
+    border-top: 4px solid var(--node-center);
+    overflow-y: auto; 
+    padding: 2rem;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+}
+
+.content-container { max-width: 800px; margin: 0 auto; }
+.detail-title { font-size: 1.8rem; font-weight: 700; color: var(--node-cat); margin-bottom: 0.5rem; }
+.tag-group { display: flex; gap: 10px; margin: 10px 0 20px 0; }
+.tag { padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+.tag.grade { background: #FFEDD5; color: #9A3412; }
+.tag.ihc { background: #DCFCE7; color: #166534; }
+.tag.cat { background: #E0F2FE; color: #075985; }
+
+/* Content Cards */
+.content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+.card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+.card-header { font-weight: 700; color: var(--node-cat); margin-bottom: 1rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.5rem; }
+.card-body { font-size: 0.95rem; line-height: 1.6; color: #555; }
+.badge-pos { background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+
+/* Search Results Dropdown */
+.search-results {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: white; border: 1px solid #eee;
+    border-radius: 10px; margin-top: 5px;
+    max-height: 300px; overflow-y: auto; display: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.search-results.show { display: block; }
+.search-result-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+.search-result-item:hover { background: #f0f9ff; }
+
+
+/* --- MOBILE OPTIMIZATION (Keep the List View for Phones!) --- */
+@media (max-width: 768px) {
+    /* Reset layout for phone */
+    body { overflow: auto; height: auto; }
+    .container { height: auto; display: block; }
+    
+    /* Header Stack */
+    header { flex-direction: column; gap: 10px; }
+    .header-right { width: 100%; justify-content: space-between; }
+    .search-input { width: 100% !important; }
+    
+    /* RESET TREE TO LIST STYLE FOR MOBILE (Critical for usability) */
+    .tree-panel { 
+        height: auto; 
+        max-height: 50vh; 
+        padding: 20px; 
+        background: white;
+        display: block; /* Remove flex centering */
+    }
+    
+    .tree ul { display: block; padding-top: 0; }
+    .tree li { 
+        float: none; 
+        text-align: left; 
+        padding: 5px 0;
+        width: 100%;
+        display: block;
+    }
+    
+    /* Remove connectors on mobile */
+    .tree li::before, .tree li::after, .tree ul ul::before { display: none; }
+    
+    /* Mobile Buttons (Rectangular list items) */
+    .node-btn, .node-btn[data-key="root"], .node-btn.theme-adult, .tree ul ul ul .node-btn {
+        width: 100%;
+        border-radius: 8px;
+        height: auto;
+        padding: 12px;
+        align-items: flex-start; /* Left align text */
+        text-align: left;
+        margin-bottom: 5px;
+        box-shadow: none;
+        background: #f8f9fa;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    /* Indentation for hierarchy */
+    .tree ul ul { padding-left: 20px; }
+    
+    .node-btn.selected { border-left: 5px solid var(--node-center); background: white !important; }
+
+    /* Auto-scroll behavior */
+    .detail-panel { min-height: 100vh; padding: 1rem; }
+}
