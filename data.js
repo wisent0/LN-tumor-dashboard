@@ -1,4 +1,4 @@
-// Lymphoma Data Module - Verified Syntax
+// Lymphoma Data Module
 // Source: WHO Classification of Haematolymphoid Tumours (5th Ed, 2022)
 
 const medicalData = {
