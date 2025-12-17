@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 9. Handle window resize
     window.addEventListener('resize', () => {
-        // Re-center on resize
         state.x = wrapper.offsetWidth / 2;
         state.y = wrapper.offsetHeight / 2;
         updateTransform();
