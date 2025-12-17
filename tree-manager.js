@@ -1,5 +1,3 @@
-[file name]: tree-manager.js
-[file content begin]
 // Tree Manager - Buzan-style Mind Map Layout
 class TreeManager {
     constructor(data) {
@@ -348,4 +346,3 @@ class TreeManager {
         return this.nodes.map(n => n.id);
     }
 }
-[file content end]

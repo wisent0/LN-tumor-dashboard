@@ -1,5 +1,3 @@
-[file name]: styles.css
-[file content begin]
 :root {
     --bg: #f8fafc;
     --c-root: #0284c7;    
@@ -408,4 +406,3 @@ path.plasma_conn { stroke: #d97706; }
 .mind-node {
     animation: nodeAppear 0.3s ease-out;
 }
-[file content end]

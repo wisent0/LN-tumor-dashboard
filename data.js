@@ -1,5 +1,3 @@
-[file name]: data.js
-[file content begin]
 // Lymphoma Data Module - Comprehensive WHO 5th Ed (2022)
 // Citations: Alaggio et al. Leukemia 2022; Swerdlow et al. WHO Blue Book.
 
@@ -163,4 +161,3 @@ const medicalData = {
         content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>LP Cells:</b> "Popcorn" cells (multilobated).</li><li><b>IHC Pos:</b> CD20 (Strong), CD45, OCT2, BOB1, BCL6.</li><li><b>IHC Neg:</b> CD30, CD15.</li><li><b>Note:</b> Preserves B-cell program. T-cell rosettes (PD1+) surround tumor cells.</li></ul></div></div></div><div class="reference-section"><p>WHO 5th Ed (2022).</p></div>`
     }
 };
-[file content end]

@@ -1,5 +1,3 @@
-[file name]: app.js
-[file content begin]
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Managers
     const treeManager = new TreeManager(medicalData);
@@ -157,4 +155,3 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTransform();
     });
 });
-[file content end]
