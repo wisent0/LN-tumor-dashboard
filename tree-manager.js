@@ -1,171 +1,189 @@
-// Lymphoma Data Module - WHO 5th Ed (2022)
-const medicalData = {
-    metadata: {
-        version: "2.1.0",
-        lastUpdated: "2025-01-20",
-        source: "WHO Classification of Haematolymphoid Tumours, 5th Ed",
-        clinicalDisclaimer: "Educational use only. Not for primary diagnosis."
-    },
-
-    root: {
-        title: "Lymphoma Triage",
-        tags: ["WHO 5th Ed"],
-        content: `
-            <div class="content-grid">
-                <div class="card">
-                    <div class="card-header">Diagnostic Approach</div>
-                    <div class="card-body">
-                        <p><b>WHO 5th Edition (2022)</b> multiparametric approach:</p>
-                        <ul>
-                            <li><b>Morphology:</b> Cell size, nuclear shape, pattern.</li>
-                            <li><b>Immunophenotype:</b> B-cell, T-cell, NK-cell markers.</li>
-                            <li><b>Genetics:</b> Essential definitions (MYC, BCL2, ALK).</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>`
-    },
-
-    // --- MATURE B-CELL ---
-    b_cell_cat: { title: "Mature B-Cell", tags:["CD20+", "PAX5+"], color: "#dc2626", content: "<div>Neoplasms of mature B-cells.</div>" },
-    
-    small_b_cat: { title: "Small B-Cell", tags:["Low Grade"], color: "#dc2626", content: "<div><b>Diff Dx:</b> CD5+ (CLL, MCL), CD10+ (FL), Neg (MZL, LPL).</div>" },
-    cll_sll: {
-        title: "CLL / SLL",
-        tags: ["CD5+", "CD23+", "LEF1+"],
-        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>Micro:</b> Small lymphs, proliferation centers.</li><li><b>IHC:</b> CD5+, CD23+, LEF1+, CD200+.</li><li><b>Genetics:</b> del(13q) (good), del(17p) (bad).</li></ul></div></div></div>`
-    },
-    mantle: {
-        title: "Mantle Cell",
-        tags: ["CD5+", "CyclinD1+"],
-        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>IHC:</b> CD5+, Cyclin D1+, SOX11+. CD23-.</li><li><b>Genetics:</b> t(11;14).</li></ul></div></div></div>`
-    },
-    follicular: {
-        title: "Follicular",
-        tags: ["CD10+", "BCL2+"],
-        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>IHC:</b> CD10+, BCL6+, BCL2+.</li><li><b>Genetics:</b> t(14;18).</li></ul></div></div></div>`
-    },
-    marginal: {
-        title: "Marginal Zone",
-        tags: ["Exclusion"],
-        content: `<div>MALT (Extranodal), Nodal, or Splenic types. Diagnosis of exclusion (CD5-/CD10-).</div>`
-    },
-    lpl: {
-        title: "LPL / Waldenström",
-        tags: ["MYD88", "IgM"],
-        content: `<div>Plasmacytoid lymphs, IgM spike. <i>MYD88</i> L265P mutation.</div>`
-    },
-    hairy: {
-        title: "Hairy Cell",
-        tags: ["BRAF", "CD103+"],
-        content: `<div>"Hairy" projections, Annexin A1+, <i>BRAF</i> V600E.</div>`
-    },
-
-    aggressive_b_cat: { title: "Aggressive B-Cell", tags:["High Grade"], color: "#dc2626", content: "<div>High Ki67, diffuse growth.</div>" },
-    dlbcl: {
-        title: "DLBCL, NOS",
-        tags: ["Most Common"],
-        content: `<div>Large B-cells. Classify by Hans (GCB vs ABC). Rule out Double Hit.</div>`
-    },
-    hgbl: {
-        title: "High Grade B-Cell",
-        tags: ["Double Hit"],
-        content: `<div><i>MYC</i> and <i>BCL2</i> rearrangements (Double Hit). Aggressive.</div>`
-    },
-    burkitt: {
-        title: "Burkitt",
-        tags: ["t(8;14)", "MYC"],
-        content: `<div>Starry sky pattern. CD10+, BCL6+, Ki67~100%. <i>MYC</i> translocation.</div>`
-    },
-
-    plasma_cat: { title: "Plasma Cell", tags:["CD138+"], color: "#dc2626", content: "<div>Terminally differentiated B-cells.</div>" },
-    myeloma: {
-        title: "Myeloma",
-        tags: ["CRAB"],
-        content: `<div>Clonal plasma cells + CRAB (Calcium, Renal, Anemia, Bone). CD138+, CD38+.</div>`
-    },
-
-    // --- MATURE T-CELL ---
-    t_cell_cat: { title: "Mature T/NK-Cell", tags:["CD3+"], color: "#059669", content: "<div>Post-thymic T-cells.</div>" },
-    nodal_t_cat: { title: "Nodal T-Cell", tags:["Aggressive"], color: "#059669", content: "<div>Primary nodal involvement.</div>" },
-    ptcl: {
-        title: "PTCL, NOS",
-        tags: ["Exclusion"],
-        content: `<div>Diagnosis of exclusion. Variable phenotype.</div>`
-    },
-    aitl: {
-        title: "AITL (nTFH)",
-        tags: ["TFH Markers"],
-        content: `<div>TFH origin (CD10+, PD1+, CXCL13+). High endothelial venules, EBV+ B-cells.</div>`
-    },
-    alcl: {
-        title: "ALCL",
-        tags: ["CD30+", "ALK+/-"],
-        content: `<div>Hallmark cells (kidney nuclei). CD30 intense. ALK+ (better prognosis) or ALK-.</div>`
-    },
-
-    cut_t_cat: { title: "Cutaneous T-Cell", tags:["Skin"], color: "#059669", content: "<div>Primary skin involvement.</div>" },
-    mf: {
-        title: "Mycosis Fungoides",
-        tags: ["Epidermotropism"],
-        content: `<div>Cerebriform nuclei, Pautrier microabscesses. CD4+.</div>`
-    },
-    sezary: {
-        title: "Sézary Syndrome",
-        tags: ["Leukemic"],
-        content: `<div>Triad: Erythroderma, Lymphadenopathy, Circulating Sézary cells.</div>`
-    },
-    leukemic_t_cat: { title: "Leukemic T-Cell", tags:["Blood"], color: "#059669", content: "<div>T-PLL, T-LGL.</div>" },
-
-    // --- HODGKIN ---
-    hodgkin_cat: { title: "Hodgkin", tags:["RS Cells"], color: "#7c3aed", content: "<div>Reed-Sternberg cells.</div>" },
-    chl: {
-        title: "Classic CHL",
-        tags: ["CD30+", "CD15+"],
-        content: `<div>Binucleate RS cells. CD30+, CD15+, PAX5(dim). CD20/CD45 neg.</div>`
-    },
-    nlphl: {
-        title: "NLPHL",
-        tags: ["Popcorn Cells"],
-        content: `<div>LP cells. CD20+, CD45+, OCT2+. CD30/CD15 neg.</div>`
-    },
-
-    // --- PRECURSOR ---
-    precursor_cat: { title: "Precursor", tags:["Blasts"], color: "#2563eb", content: "<div>Immature blasts (TdT+).</div>" },
-    b_all: {
-        title: "B-ALL",
-        tags: ["CD19+", "TdT+"],
-        content: `<div>B-lymphoblasts. CD19+, CD10+, PAX5+, TdT+. Check genetics (Ph+, etc).</div>`
-    },
-    t_all: {
-        title: "T-ALL",
-        tags: ["CD3+", "TdT+"],
-        content: `<div>Mediastinal mass. cCD3+, CD7+, TdT+.</div>`
-    },
-
-    // --- HISTIOCYTIC ---
-    histio_cat: { title: "Histiocytic", tags:["CD68+"], color: "#d97706", content: "<div>Histiocyte/Dendritic neoplasms.</div>" },
-    lch: {
-        title: "Langerhans Cell",
-        tags: ["CD1a+", "Langerin"],
-        content: `<div>Grooved nuclei, eosinophils. CD1a+, Langerin+, S100+. BRAF V600E.</div>`
-    },
-    erdheim_chester: {
-        title: "Erdheim-Chester",
-        tags: ["Foamy", "BRAF"],
-        content: `<div>Foamy histiocytes. CD68+, CD163+. CD1a neg. Bone pain.</div>`
-    },
-
-    // --- IMMUNODEFICIENCY ---
-    id_cat: { title: "Immuno-deficiency", tags:["EBV", "Tx"], color: "#db2777", content: "<div>Post-transplant or HIV associated.</div>" },
-    ptld: {
-        title: "PTLD",
-        tags: ["Transplant"],
-        content: `<div>Post-transplant. Range from hyperplasia to lymphoma (usually EBV+).</div>`
-    },
-    hiv_related: {
-        title: "HIV-Related",
-        tags: ["HHV8"],
-        content: `<div>PEL, Plasmablastic, Burkitt. Often HHV8/EBV driven.</div>`
+// tree-manager.js
+class TreeManager {
+    constructor(data) {
+        this.data = data;
+        this.nodes = [];
+        this.connections = [];
+        this.config = AppConfig.layout;
+        this.spatialHash = new Map();
+        this.cellSize = 120;
+        
+        // Bind for event delegation
+        this.handleNodeClick = this.handleNodeClick.bind(this);
     }
-};
+
+    addToSpatialHash(node) {
+        const key = `${Math.floor(node.x / this.cellSize)},${Math.floor(node.y / this.cellSize)}`;
+        if (!this.spatialHash.has(key)) this.spatialHash.set(key, []);
+        this.spatialHash.get(key).push(node);
+    }
+
+    getNearbyNodes(x, y) {
+        const cx = Math.floor(x / this.cellSize);
+        const cy = Math.floor(y / this.cellSize);
+        let nearby = [];
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                const key = `${cx + i},${cy + j}`;
+                if (this.spatialHash.has(key)) nearby = nearby.concat(this.spatialHash.get(key));
+            }
+        }
+        return nearby;
+    }
+
+    getChildrenKeys(key) {
+        // 1. Check Config (Level 1)
+        if (AppConfig.branches[key]) return AppConfig.branches[key].children;
+        // 2. Fallback Map for Data Levels (Level 2+)
+        const map = {
+            'small_b_cat': ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy'],
+            'aggressive_b_cat': ['dlbcl', 'hgbl', 'burkitt'],
+            'nodal_t_cat': ['ptcl', 'aitl', 'alcl'],
+            'cut_t_cat': ['mf', 'sezary'],
+            'histio_cat': ['lch', 'erdheim_chester'],
+            'id_cat': ['ptld', 'hiv_related'],
+            'precursor_cat': ['b_all', 't_all'],
+            'plasma_cat': ['myeloma']
+        };
+        return map[key] || [];
+    }
+
+    calculateLayout() {
+        this.nodes = [];
+        this.connections = [];
+        this.spatialHash.clear();
+
+        const rootNode = {
+            id: 'root', x: 0, y: 0, type: 'root', branch: 'root',
+            title: this.data['root'].title, color: 'var(--c-root)'
+        };
+        this.nodes.push(rootNode);
+        this.addToSpatialHash(rootNode);
+
+        const mainBranches = Object.keys(AppConfig.branches);
+        const angleStep = 360 / mainBranches.length;
+
+        mainBranches.forEach((branchKey, index) => {
+            if (!this.data[branchKey]) return;
+            const angle = index * angleStep;
+            const color = AppConfig.branches[branchKey].color;
+            this.processNodeRecursive(branchKey, 0, 0, angle, 1, branchKey, color);
+        });
+    }
+
+    processNodeRecursive(key, parentX, parentY, angle, depth, branchId, color) {
+        const radius = this.config.baseRadius + ((depth - 1) * this.config.radiusStep);
+        const rad = angle * (Math.PI / 180);
+        
+        // Level 1: Absolute Polar; Level 2+: Relative Polar
+        let x = depth === 1 ? radius * Math.cos(rad) : parentX + this.config.radiusStep * Math.cos(rad);
+        let y = depth === 1 ? radius * Math.sin(rad) : parentY + this.config.radiusStep * Math.sin(rad);
+
+        const node = {
+            id: key, x, y, type: depth === 1 ? 'cat' : 'item',
+            branch: branchId, title: this.data[key]?.title || key, color: color
+        };
+
+        const adjusted = this.resolveCollisions(node);
+        this.nodes.push(adjusted);
+        this.addToSpatialHash(adjusted);
+
+        const curve = this.calculateCurvePath(parentX, parentY, adjusted.x, adjusted.y);
+        this.connections.push({
+            from: {x: parentX, y: parentY}, to: {x: adjusted.x, y: adjusted.y},
+            control: curve.control, color: color, width: Math.max(1, 5 - depth)
+        });
+
+        const children = this.getChildrenKeys(key);
+        if (children.length > 0) {
+            const spread = Math.max(20, 120 / depth); 
+            const startAngle = angle - (spread / 2);
+            const step = children.length > 1 ? spread / (children.length - 1) : 0;
+            children.forEach((child, i) => {
+                if (!this.data[child]) return;
+                const childAngle = children.length === 1 ? angle : startAngle + (i * step);
+                this.processNodeRecursive(child, adjusted.x, adjusted.y, childAngle, depth + 1, branchId, color);
+            });
+        }
+    }
+
+    resolveCollisions(node) {
+        let attempts = 0;
+        while (attempts < 10) {
+            let collision = false;
+            const nearby = this.getNearbyNodes(node.x, node.y);
+            for (const other of nearby) {
+                if (node.id === other.id) continue;
+                const dx = node.x - other.x;
+                const dy = node.y - other.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 90) {
+                    collision = true;
+                    node.x += (dx/dist || 1) * 15;
+                    node.y += (dy/dist || 1) * 15;
+                }
+            }
+            if (!collision) break;
+            attempts++;
+        }
+        return node;
+    }
+
+    calculateCurvePath(x1, y1, x2, y2) {
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        return {
+            start: {x: x1, y: y1}, end: {x: x2, y: y2},
+            control: { x: midX, y: midY } // Simple quadratic for performance
+        };
+    }
+
+    render(nodeContainer, connectionContainer) {
+        this.spatialHash.clear();
+        this.calculateLayout();
+        
+        connectionContainer.innerHTML = this.connections.map(c => 
+            `<path d="M ${c.from.x} ${c.from.y} Q ${c.control.x} ${c.control.y} ${c.to.x} ${c.to.y}" 
+                   stroke="${c.color}" stroke-width="${c.width}" fill="none" opacity="0.7" />`
+        ).join('');
+
+        nodeContainer.innerHTML = this.nodes.map(n => 
+            `<div class="mind-node ${n.type}" data-key="${n.id}" 
+                  style="left:${n.x}px; top:${n.y}px; border-color: ${n.color};" 
+                  role="button" tabindex="0" aria-label="${n.title}">
+                ${SecurityManager.sanitizeHTML(n.title)}
+            </div>`
+        ).join('');
+
+        this.setupDelegatedListeners(nodeContainer);
+    }
+
+    setupDelegatedListeners(container) {
+        container.removeEventListener('click', this.handleNodeClick);
+        container.addEventListener('click', this.handleNodeClick);
+        container.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.classList.contains('mind-node')) this.handleNodeClick(e);
+        });
+    }
+
+    handleNodeClick(e) {
+        const nodeEl = e.target.closest('.mind-node');
+        if (!nodeEl) return;
+        e.stopPropagation();
+        this.selectNode(nodeEl.dataset.key);
+        document.dispatchEvent(new CustomEvent('node-selected', { detail: { key: nodeEl.dataset.key } }));
+    }
+
+    selectNode(key) {
+        document.querySelectorAll('.mind-node.selected').forEach(n => n.classList.remove('selected'));
+        const target = document.querySelector(`.mind-node[data-key="${key}"]`);
+        if (target) target.classList.add('selected');
+    }
+
+    highlightNode(key, highlight) {
+        const target = document.querySelector(`.mind-node[data-key="${key}"]`);
+        if(target) highlight ? target.classList.add('highlighted') : target.classList.remove('highlighted');
+    }
+    clearHighlights() { document.querySelectorAll('.highlighted').forEach(n => n.classList.remove('highlighted')); }
+    getAllNodeKeys() { return this.nodes.map(n => n.id); }
+}
