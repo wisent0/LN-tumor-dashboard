@@ -96,10 +96,9 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
 }
 
 /* Root Node */
-.mind-node[data-type="root"] {
+.mind-node.root {
     width: 120px; height: 120px;
     border-radius: 50%;
-    background: var(--c-root);
     color: white;
     font-size: 1.2rem;
     font-weight: 800;
@@ -111,34 +110,46 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
 }
 
 /* Category Nodes */
-.mind-node[data-type="cat"] {
-    background: var(--c-cat);
+.mind-node.cat {
     color: white;
     font-size: 1rem;
     padding: 10px 20px;
     border: none;
     z-index: 15;
+    border-radius: 25px;
+}
+
+/* Item Nodes */
+.mind-node.item {
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    z-index: 10;
 }
 
 /* Interaction */
-.mind-node:hover { transform: translate(-50%, -50%) scale(1.1); z-index: 100; }
+.mind-node:hover { 
+    transform: translate(-50%, -50%) scale(1.1); 
+    z-index: 100; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 .mind-node.selected { 
     background: #FFD700 !important; 
     color: black !important; 
-    border-color: black; 
+    border-color: black !important; 
     transform: translate(-50%, -50%) scale(1.15);
     box-shadow: 0 0 0 4px rgba(0,0,0,0.1);
 }
 .mind-node.highlighted {
-    background: #fef08a;
-    border-color: #eab308;
-    box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.4);
+    background: #fef08a !important;
+    border-color: #eab308 !important;
+    box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.4) !important;
 }
 
 /* RIGHT: DETAIL PANEL */
 .detail-panel {
     flex: 1;
     min-width: 350px;
+    max-width: 500px;
     background: white;
     overflow-y: auto; 
     padding: 25px;
@@ -152,18 +163,68 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
 .tag { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 .tag.pos { background: #dcfce7; color: #166534; } 
 .tag.neg { background: #fee2e2; color: #991b1b; } 
-.card { border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; background: #fff; }
+.tag.gen { background: #e0e7ff; color: #3730a3; }
+.tag.cat { background: #f3f4f6; color: #4b5563; }
+.card { border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; background: #fff; overflow: hidden; }
 .card-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; color: #334155; border-bottom: 1px solid #eee; }
 .card-body { padding: 15px; font-size: 0.95rem; line-height: 1.6; color: #475569; }
 .card-body ul { margin-left: 20px; padding: 0; }
+.card-body li { margin-bottom: 8px; }
 
 /* SEARCH RESULTS */
-.search-results {
-    position: absolute; top: 55px; right: 20px; width: 300px;
-    background: white; border: 1px solid #cbd5e1; border-radius: 8px;
-    max-height: 400px; overflow-y: auto; display: none;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100;
+#searchResults {
+    position: absolute; 
+    top: 55px; 
+    right: 20px; 
+    width: 300px;
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 8px;
+    max-height: 400px; 
+    overflow-y: auto; 
+    display: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+    z-index: 100;
 }
-.search-results.show { display: block; }
-.search-result-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+#searchResults.show { display: block; }
+.search-result-item { 
+    padding: 12px; 
+    border-bottom: 1px solid #f1f5f9; 
+    cursor: pointer; 
+    display: flex;
+    flex-direction: column;
+}
 .search-result-item:hover { background: #f8fafc; }
+.search-result-category {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.no-results {
+    padding: 20px;
+    text-align: center;
+    color: #64748b;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Reference Section */
+.reference-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+.ref-title {
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 5px;
+}

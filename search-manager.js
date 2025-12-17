@@ -109,14 +109,14 @@ class SearchManager {
 
     displayResults(results) {
         if (results.length === 0) {
-            this.resultsContainer.innerHTML = '<div class="no-results">No matching tumors found</div>';
+            this.resultsContainer.innerHTML = '<div class="no-results">No matching lymphomas found</div>';
             this.resultsContainer.classList.add('show');
             return;
         }
 
         const html = results.slice(0, 10).map(result => { // Limit to 10 results
             const { key, item } = result;
-            const category = this.getCategoryFromColor(item.color);
+            const category = this.getCategoryFromKey(key);
             
             return `
                 <div class="search-result-item" 
@@ -139,20 +139,15 @@ class SearchManager {
         this.setupResultListeners();
     }
 
-    getCategoryFromColor(color) {
-        const colorMap = {
-            'var(--c-root)': 'Root',
-            'var(--c-adult)': 'Adult Glioma',
-            'var(--c-ped-lgg)': 'Pediatric LGG',
-            'var(--c-ped-hgg)': 'Pediatric HGG',
-            'var(--c-circum)': 'Circumscribed',
-            'var(--c-epend)': 'Ependymal',
-            'var(--c-mening)': 'Meningeal',
-            'var(--c-embryo)': 'Embryonal',
-            'var(--c-sellar)': 'Sellar',
-            'var(--c-nerve)': 'Nerve'
-        };
-        return colorMap[color] || 'Other';
+    getCategoryFromKey(key) {
+        // Determine category based on key patterns
+        if (key === 'root') return 'Root';
+        if (key.includes('_cat')) return 'Category';
+        if (key.includes('b_cell') || ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy', 'dlbcl', 'hgbl', 'burkitt'].includes(key)) return 'B-Cell';
+        if (key.includes('t_cell') || ['ptcl', 'aitl', 'alcl', 'mf', 'sezary'].includes(key)) return 'T-Cell';
+        if (key.includes('hodgkin') || ['chl', 'nlphl'].includes(key)) return 'Hodgkin';
+        if (key.includes('plasma') || key === 'myeloma') return 'Plasma Cell';
+        return 'Other';
     }
 
     setupResultListeners() {
