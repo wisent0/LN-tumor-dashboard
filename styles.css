@@ -1,110 +1,219 @@
 :root {
     --bg: #ffffff;
-    --c-root: #0089cc;    /* Bright Blue Center */
+    --c-root: #0089cc;    /* Mind Map Blue Center */
     --c-cat: #005f88;     /* Dark Blue Categories */
     --c-item: #ffffff;    /* White Items */
     --line-color: #0089cc;
     --text-main: #333;
+    --border: #e2e8f0;
 }
 
 body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-header { padding: 10px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; z-index: 10; }
+/* HEADER */
+header { 
+    padding: 10px 20px; 
+    border-bottom: 1px solid #eee; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: white; 
+    height: 60px;
+    z-index: 10; 
+}
 h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center; gap: 10px; margin: 0; }
-.search-input { padding: 6px 10px 6px 30px; border-radius: 20px; border: 1px solid #ccc; width: 200px; }
+.search-input { padding: 6px 10px 6px 30px; border-radius: 20px; border: 1px solid #ccc; width: 250px; background: #f8fafc; }
 
-.container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-
-/* TREE PANEL - MIND MAP */
-.tree-panel {
+/* MAIN CONTAINER - 75/25 SPLIT */
+.container { 
+    display: flex; 
+    flex-direction: row; /* Horizontal layout */
     flex: 1; 
+    overflow: hidden; 
+}
+
+/* LEFT: TREE PANEL (75%) */
+.tree-panel {
+    flex: 3; /* 75% width */
     background-image: radial-gradient(#e0f2fe 1px, transparent 1px);
     background-size: 30px 30px;
+    background-color: #f8fbfd;
     overflow: auto; 
     display: flex;
-    justify-content: center;
-    padding-top: 40px;
-    padding-bottom: 40px;
+    justify-content: center; /* Center the root horizontally */
+    padding: 50px;
+    position: relative;
+    border-right: 2px solid #ddd;
 }
 
-.tree { display: flex; justify-content: center; }
-.tree ul {
-    padding-top: 20px; position: relative;
-    display: flex; justify-content: center;
+/* RIGHT: DETAIL PANEL (25%) */
+.detail-panel {
+    flex: 1; /* 25% width */
+    min-width: 350px; /* Don't get too small */
+    background: white;
+    overflow-y: auto; 
+    padding: 20px;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+    z-index: 20;
 }
+
+/* --- MIND MAP CSS TREE STRUCTURE --- */
+.tree {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.tree ul {
+    padding-top: 30px; 
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
 .tree li {
     float: left; text-align: center; list-style-type: none;
-    position: relative; padding: 20px 5px 0 5px;
+    position: relative; padding: 30px 10px 0 10px; /* Spacing between bubbles */
 }
-/* Connectors */
+
+/* CONNECTING LINES */
+/* Vertical line from parent down to children */
 .tree li::before, .tree li::after {
-    content: ''; position: absolute; top: 0; right: 50%;
-    border-top: 2px solid var(--line-color); width: 50%; height: 20px;
+    content: ''; 
+    position: absolute; top: 0; right: 50%;
+    border-top: 2px solid var(--line-color); 
+    width: 50%; height: 30px;
 }
-.tree li::after { right: auto; left: 50%; border-left: 2px solid var(--line-color); }
+.tree li::after { 
+    right: auto; left: 50%; 
+    border-left: 2px solid var(--line-color); 
+}
+
+/* Remove connectors from only child */
 .tree li:only-child::after, .tree li:only-child::before { display: none; }
 .tree li:only-child { padding-top: 0; }
-.tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-.tree li:last-child::before { border-right: 2px solid var(--line-color); border-radius: 0 5px 0 0; }
-.tree li:first-child::after { border-radius: 5px 0 0 0; }
-.tree ul ul::before {
-    content: ''; position: absolute; top: 0; left: 50%;
-    border-left: 2px solid var(--line-color); width: 0; height: 20px;
-}
-.tree ul.hidden { display: none; }
 
-/* BUBBLES */
+/* Remove connectors from first/last nodes to curve them */
+.tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+.tree li:last-child::before { 
+    border-right: 2px solid var(--line-color); 
+    border-radius: 0 5px 0 0; 
+}
+.tree li:first-child::after { 
+    border-radius: 5px 0 0 0; 
+}
+
+/* Downward connector from parent */
+.tree ul ul::before {
+    content: ''; 
+    position: absolute; top: 0; left: 50%;
+    border-left: 2px solid var(--line-color); 
+    width: 0; height: 30px;
+}
+
+/* --- BUBBLE STYLES --- */
 .node-btn {
-    text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50px; 
-    transition: all 0.3s;
+    text-decoration: none; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 50px; /* Oval shape */
+    transition: all 0.2s ease;
     cursor: pointer;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border: 2px solid transparent;
     position: relative;
-    z-index: 2;
+    z-index: 5;
+    white-space: nowrap; /* Keep text on one line if possible */
 }
 
-/* Root Node */
+/* LEVEL 1: ROOT NODE (Big Blue Center) */
 .node-btn[data-key="root"] {
-    width: 130px; height: 130px; border-radius: 50%;
-    background: var(--c-root); color: white;
-    font-size: 1.2rem; font-weight: 800;
-    border: 4px solid white;
+    width: 140px; height: 140px; 
+    border-radius: 50%;
+    background: var(--c-root); 
+    color: white;
+    font-size: 1.3rem; 
+    font-weight: 800;
+    border: 5px solid white;
     box-shadow: 0 0 0 4px var(--c-root);
+    white-space: normal;
+    text-align: center;
 }
 
-/* Level 1 Nodes */
+/* LEVEL 2: CATEGORIES (Dark Blue) */
 .tree > li > ul > li > .node-btn {
-    background: var(--c-cat); color: white;
-    padding: 10px 20px; min-width: 100px; font-weight: 600;
+    background: var(--c-cat); 
+    color: white;
+    padding: 12px 25px; 
+    min-width: 120px;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
-/* Level 2 Nodes */
+/* LEVEL 3 & 4: ITEMS (White with Blue Border) */
 .tree ul ul ul .node-btn {
-    background: white; color: #333;
+    background: white; 
+    color: #333;
     border: 2px solid var(--c-root);
-    padding: 8px 15px; font-weight: 500; font-size: 0.9rem;
+    padding: 8px 15px; 
+    font-weight: 600; 
+    font-size: 0.85rem;
 }
 
-.node-btn:hover { transform: scale(1.1); z-index: 10; }
-.node-btn.selected { background: #ffd700 !important; color: black !important; border-color: black; }
-
-/* DETAIL PANEL */
-.detail-panel {
-    height: 40%; background: #f9fafb; border-top: 4px solid var(--c-root);
-    overflow-y: auto; padding: 20px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+/* Hover & Selection */
+.node-btn:hover { 
+    transform: scale(1.1); 
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    z-index: 10;
 }
-.content-container { max-width: 800px; margin: 0 auto; }
-.detail-title { font-size: 1.5rem; font-weight: 700; color: var(--c-cat); margin-bottom: 10px; }
-.tag { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; }
+.node-btn.selected { 
+    background: #FFD700 !important; /* Gold selection */
+    color: black !important; 
+    border-color: black; 
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+.node-btn.highlighted {
+    animation: pulse 1s infinite;
+    background: #ffffcc;
+}
 
-/* MOBILE */
+/* --- DETAIL CONTENT STYLING --- */
+.detail-title { font-size: 1.8rem; font-weight: 800; color: var(--c-cat); margin-bottom: 5px; line-height: 1.2; }
+.detail-subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; font-style: italic; }
+
+.tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.tag { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+.tag.pos { background: #dcfce7; color: #166534; }
+.tag.neg { background: #fee2e2; color: #991b1b; }
+.tag.gen { background: #e0f2fe; color: #075985; }
+
+.card { border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; background: #fff; }
+.card-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; color: #334155; border-bottom: 1px solid #eee; }
+.card-body { padding: 15px; font-size: 0.95rem; line-height: 1.6; color: #475569; }
+.card-body ul { margin-left: 20px; padding: 0; }
+
+.reference-section { margin-top: 30px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 0.8rem; color: #94a3b8; }
+
+/* SEARCH RESULTS */
+.search-results {
+    position: absolute; top: 55px; right: 20px; width: 300px;
+    background: white; border: 1px solid #cbd5e1; border-radius: 8px;
+    max-height: 400px; overflow-y: auto; display: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100;
+}
+.search-results.show { display: block; }
+.search-result-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+.search-result-item:hover { background: #f8fafc; }
+
+/* MOBILE RESPONSIVE (Stack vertically on phones) */
 @media (max-width: 768px) {
-    .tree-panel { display: block; padding: 10px; }
-    .tree ul { display: block; padding: 0; }
-    .tree li { float: none; display: block; text-align: left; padding: 5px 0; width: 100%; }
+    .container { flex-direction: column; }
+    .tree-panel { flex: 1; height: 50vh; border-right: none; border-bottom: 2px solid #ddd; }
+    .detail-panel { flex: 1; height: 50vh; }
+    /* Revert to vertical list on mobile for usability */
+    .tree li { float: none; display: block; text-align: left; padding: 5px 0; }
     .tree li::before, .tree li::after, .tree ul ul::before { display: none; }
-    .node-btn { width: 100%; border-radius: 8px; justify-content: flex-start; padding: 12px; height: auto; margin-bottom: 5px; }
+    .node-btn { width: 100%; justify-content: flex-start; padding-left: 15px; margin-bottom: 5px; }
 }

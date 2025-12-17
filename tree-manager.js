@@ -1,10 +1,10 @@
-// Tree Manager - Lymphoma Structure
+// Tree Manager Module - ALWAYS EXPANDED (Radial Mind Map Style)
 class TreeManager {
     constructor(data) {
         this.data = data;
         this.treeStructure = this.buildTreeStructure();
         this.selectedNode = null;
-        this.expandedNodes = new Set(['root']); 
+        // No expandedNodes Set needed because everything is expanded by default
     }
 
     buildTreeStructure() {
@@ -12,53 +12,42 @@ class TreeManager {
             root: {
                 key: 'root',
                 children: [
-                    // 1. MATURE B-CELL
+                    // 1. B-CELL
                     {
                         key: 'b_cell_cat',
                         children: [
                             {
                                 key: 'small_b_cat',
-                                children: [ 
-                                    { key: 'cll_sll' }, 
-                                    { key: 'mantle' }, 
-                                    { key: 'follicular' }, 
-                                    { key: 'marginal' },
-                                    { key: 'lpl' }
-                                ]
+                                children: [ { key: 'cll_sll' }, { key: 'mantle' }, { key: 'follicular' }, { key: 'marginal' }, { key: 'lpl' }, { key: 'hairy' } ]
                             },
                             {
                                 key: 'aggressive_b_cat',
-                                children: [ 
-                                    { key: 'dlbcl' }, 
-                                    { key: 'burkitt' },
-                                    { key: 'hgbl' }
-                                ]
+                                children: [ { key: 'dlbcl' }, { key: 'hgbl' }, { key: 'burkitt' } ]
+                            },
+                            {
+                                key: 'plasma_cat',
+                                children: [ { key: 'myeloma' } ]
                             }
                         ]
                     },
-                    // 2. MATURE T-CELL
+                    // 2. T-CELL
                     {
                         key: 't_cell_cat',
-                        children: [ 
-                            { key: 'ptcl' }, 
-                            { key: 'alcl' },
-                            { key: 'aitl' }
+                        children: [
+                            {
+                                key: 'nodal_t_cat',
+                                children: [ { key: 'ptcl' }, { key: 'aitl' }, { key: 'alcl' } ]
+                            },
+                            {
+                                key: 'cut_t_cat',
+                                children: [ { key: 'mf' }, { key: 'sezary' } ]
+                            }
                         ]
                     },
                     // 3. HODGKIN
                     {
                         key: 'hodgkin_cat',
-                        children: [ 
-                            { key: 'chl' },
-                            { key: 'nlphl' }
-                        ]
-                    },
-                    // 4. PLASMA CELL
-                    {
-                        key: 'plasma_cat',
-                        children: [ 
-                            { key: 'myeloma' } 
-                        ]
+                        children: [ { key: 'chl' }, { key: 'nlphl' } ]
                     }
                 ]
             }
@@ -70,6 +59,7 @@ class TreeManager {
         container.innerHTML = `<ul class="tree">${this.generateTreeHTML(this.treeStructure.root)}</ul>`;
         this.setupEventListeners();
         
+        // Restore highlight
         if (this.selectedNode) {
             const btn = document.querySelector(`.node-btn[data-key="${this.selectedNode}"]`);
             if (btn) btn.classList.add('selected');
@@ -81,22 +71,17 @@ class TreeManager {
         if (!item) return '';
 
         const hasChildren = node.children && node.children.length > 0;
-        const isExpanded = this.expandedNodes.has(node.key);
         
-        let icon = '';
-        if (hasChildren) {
-            icon = `<i class="fas ${isExpanded ? 'fa-minus' : 'fa-plus'}" style="margin-right:5px; font-size:0.8em; opacity:0.7;"></i>`;
-        }
-
+        // No toggle icon needed
         let html = `<li>
-            <button class="node-btn ${isExpanded ? 'expanded' : ''}" 
+            <button class="node-btn" 
                     data-key="${node.key}">
-                ${icon}
                 <span>${item.title}</span>
             </button>`;
 
         if (hasChildren) {
-            html += `<ul class="${isExpanded ? '' : 'hidden'}">
+            // ALWAYS Render Children (No 'hidden' class)
+            html += `<ul>
                         ${node.children.map(child => this.generateTreeHTML(child)).join('')}
                      </ul>`;
         }
@@ -109,21 +94,44 @@ class TreeManager {
         document.querySelectorAll('.node-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const key = btn.dataset.key;
-                this.handleNodeClick(key);
+                this.selectNode(key);
+                document.dispatchEvent(new CustomEvent('node-selected', { detail: { key } }));
             });
         });
     }
 
-    handleNodeClick(key) {
-        this.selectedNode = key;
-        
-        if (this.expandedNodes.has(key)) {
-            this.expandedNodes.delete(key);
-        } else {
-            this.expandedNodes.add(key);
+    selectNode(key) {
+        // Remove previous selection
+        if (this.selectedNode) {
+            const prev = document.querySelector(`.node-btn[data-key="${this.selectedNode}"]`);
+            if (prev) prev.classList.remove('selected');
         }
         
-        this.render(document.getElementById('treeContent'));
-        document.dispatchEvent(new CustomEvent('node-selected', { detail: { key } }));
+        // Add new selection
+        const curr = document.querySelector(`.node-btn[data-key="${key}"]`);
+        if (curr) curr.classList.add('selected');
+        this.selectedNode = key;
+    }
+
+    highlightNode(key, highlight = true) {
+        const btn = document.querySelector(`.node-btn[data-key="${key}"]`);
+        if (btn) {
+            if (highlight) btn.classList.add('highlighted');
+            else btn.classList.remove('highlighted');
+        }
+    }
+
+    clearHighlights() {
+        document.querySelectorAll('.highlighted').forEach(el => el.classList.remove('highlighted'));
+    }
+
+    getAllNodeKeys() {
+        const keys = [];
+        const collect = (node) => {
+            keys.push(node.key);
+            if (node.children) node.children.forEach(collect);
+        };
+        collect(this.treeStructure.root);
+        return keys;
     }
 }
