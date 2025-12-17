@@ -1,40 +1,59 @@
+[file name]: app.js
+[file content begin]
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Managers
     const treeManager = new TreeManager(medicalData);
     const nodeLayer = document.getElementById('nodeLayer');
     const connectionLayer = document.getElementById('connectionLayer');
     
-    treeManager.render(nodeLayer, connectionLayer);
-
-    const searchManager = new SearchManager(medicalData, treeManager);
-    const accessibilityManager = new AccessibilityManager();
-    accessibilityManager.setupKeyboardNavigation();
-
-    // 2. PAN & ZOOM LOGIC
+    // 2. Get wrapper and world elements
     const wrapper = document.getElementById('canvasWrapper');
     const world = document.getElementById('canvasWorld');
     
+    // 3. Initial render
+    treeManager.render(nodeLayer, connectionLayer);
+    
+    // 4. Setup accessibility
+    const accessibilityManager = new AccessibilityManager();
+    accessibilityManager.setupKeyboardNavigation();
+    
+    // 5. Setup search
+    const searchManager = new SearchManager(medicalData, treeManager);
+
+    // 6. PAN & ZOOM LOGIC
     let state = {
-        scale: 0.8,      // Start slightly zoomed out to see structure
+        scale: 1,
         panning: false,
         pointX: 0,
         pointY: 0,
         startX: 0,
         startY: 0,
-        x: wrapper.offsetWidth / 2, // Start centered
+        x: wrapper.offsetWidth / 2,
         y: wrapper.offsetHeight / 2
     };
 
+    // Center the mind map initially
+    const centerMindMap = () => {
+        state.scale = 1;
+        state.x = wrapper.offsetWidth / 2;
+        state.y = wrapper.offsetHeight / 2;
+        updateTransform();
+    };
+
     function updateTransform() {
-        world.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        // Center the world properly
+        const transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        world.style.transform = transform;
         document.getElementById('zoomLevelDisplay').innerText = `${Math.round(state.scale * 100)}%`;
     }
-    
-    // Set Initial Center
-    updateTransform();
+
+    // Set initial center
+    setTimeout(centerMindMap, 100);
 
     // Mouse Down (Start Pan)
     wrapper.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('mind-node')) return;
+        
         state.panning = true;
         state.startX = e.clientX - state.x;
         state.startY = e.clientY - state.y;
@@ -59,43 +78,52 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wheel (Zoom)
     wrapper.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const xs = (e.clientX - state.x) / state.scale;
-        const ys = (e.clientY - state.y) / state.scale;
-        const delta = -e.deltaY;
-
-        (delta > 0) ? (state.scale *= 1.1) : (state.scale /= 1.1);
         
-        // Limits
-        state.scale = Math.min(Math.max(0.1, state.scale), 4);
-
-        state.x = e.clientX - xs * state.scale;
-        state.y = e.clientY - ys * state.scale;
-
+        // Get mouse position relative to wrapper
+        const rect = wrapper.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Convert to world coordinates
+        const worldX = (mouseX - state.x) / state.scale;
+        const worldY = (mouseY - state.y) / state.scale;
+        
+        // Calculate zoom
+        const delta = e.deltaY < 0 ? 1.1 : 0.9;
+        state.scale *= delta;
+        
+        // Limit zoom
+        state.scale = Math.min(Math.max(0.3, state.scale), 3);
+        
+        // Adjust pan to zoom around mouse
+        state.x = mouseX - worldX * state.scale;
+        state.y = mouseY - worldY * state.scale;
+        
         updateTransform();
     });
 
     // Zoom Buttons
     document.getElementById('zoomIn').addEventListener('click', () => {
         state.scale *= 1.2;
+        state.scale = Math.min(state.scale, 3);
         updateTransform();
     });
+    
     document.getElementById('zoomOut').addEventListener('click', () => {
         state.scale /= 1.2;
+        state.scale = Math.max(state.scale, 0.3);
         updateTransform();
     });
-    document.getElementById('recenterBtn').addEventListener('click', () => {
-        state.scale = 0.8;
-        state.x = wrapper.offsetWidth / 2;
-        state.y = wrapper.offsetHeight / 2;
-        updateTransform();
-    });
+    
+    document.getElementById('recenterBtn').addEventListener('click', centerMindMap);
 
-    // 3. Select Root Default
+    // 7. Select Root by Default
     setTimeout(() => {
+        treeManager.selectNode('root');
         document.dispatchEvent(new CustomEvent('node-selected', { detail: { key: 'root' } }));
-    }, 100);
+    }, 200);
 
-    // 4. Detail Panel Update
+    // 8. Detail Panel Update
     document.addEventListener('node-selected', (e) => {
         const key = e.detail.key;
         const item = medicalData[key];
@@ -120,4 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
             accessibilityManager.announce(`Loaded ${item.title}`);
         }
     });
+
+    // 9. Handle window resize
+    window.addEventListener('resize', () => {
+        // Re-center on resize
+        state.x = wrapper.offsetWidth / 2;
+        state.y = wrapper.offsetHeight / 2;
+        updateTransform();
+    });
 });
+[file content end]
