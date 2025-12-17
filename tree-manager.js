@@ -9,12 +9,12 @@ class TreeManager {
         // Buzan-style mind map configuration
         this.config = {
             centerRadius: 0,
-            level1Radius: 250,    // First level categories
-            level2Radius: 400,    // Second level items
-            level3Radius: 550,    // Third level items
+            level1Radius: 280,    // First level categories - increased
+            level2Radius: 450,    // Second level items - increased
+            level3Radius: 620,    // Third level items - increased
             centerX: 0,
             centerY: 0,
-            minAngleBetween: 15   // Minimum angle between nodes (degrees)
+            minAngleBetween: 20   // Increased minimum angle to prevent overlap
         };
 
         // Branch colors - Buzan style requires distinct, vibrant colors
@@ -60,16 +60,19 @@ class TreeManager {
         const positions = [];
         const totalItems = items.length;
         
+        if (totalItems === 0) return positions;
+        
         // Calculate spread based on number of items (more items = wider spread)
-        const spread = Math.min(120, totalItems * 25); // Max 120 degrees
+        // Increased minimum spread to prevent overlap
+        const spread = Math.min(140, Math.max(60, totalItems * 30));
         const startAngle = parentAngle - (spread / 2);
-        const angleStep = spread / Math.max(1, totalItems - 1);
+        const angleStep = totalItems === 1 ? 0 : spread / (totalItems - 1);
         
         items.forEach((itemKey, index) => {
             const angle = totalItems === 1 ? parentAngle : startAngle + (index * angleStep);
             const rad = angle * (Math.PI / 180);
             
-            // Calculate position
+            // Calculate position with more spacing
             const x = parentX + radius * Math.cos(rad);
             const y = parentY + radius * Math.sin(rad);
             
@@ -83,6 +86,50 @@ class TreeManager {
         });
         
         return positions;
+    }
+
+    // Check if two nodes are too close
+    nodesTooClose(node1, node2, minDistance = 80) {
+        const dx = node1.x - node2.x;
+        const dy = node1.y - node2.y;
+        return Math.sqrt(dx * dx + dy * dy) < minDistance;
+    }
+
+    // Adjust node position to avoid overlap
+    adjustNodePosition(node, existingNodes, index) {
+        const minDistance = 90; // Increased minimum distance
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (attempts < maxAttempts) {
+            let overlap = false;
+            
+            for (let i = 0; i < existingNodes.length; i++) {
+                if (i === index) continue;
+                
+                if (this.nodesTooClose(node, existingNodes[i], minDistance)) {
+                    overlap = true;
+                    // Move away from overlapping node
+                    const dx = node.x - existingNodes[i].x;
+                    const dy = node.y - existingNodes[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+                    
+                    // Move node away
+                    const moveX = (dx / distance) * (minDistance - distance);
+                    const moveY = (dy / distance) * (minDistance - distance);
+                    
+                    node.x += moveX * 1.2;
+                    node.y += moveY * 1.2;
+                    
+                    break;
+                }
+            }
+            
+            if (!overlap) break;
+            attempts++;
+        }
+        
+        return node;
     }
 
     // Main calculation function
@@ -101,12 +148,12 @@ class TreeManager {
             color: 'var(--c-root)'
         });
 
-        // 2. Main Branches (Level 1) - Arranged in a circle
+        // 2. Main Branches (Level 1) - Arranged in a circle with better spacing
         const mainBranches = [
             { key: 'b_cell_cat', angle: 180 },   // Left
+            { key: 'plasma_cat', angle: 90 },    // Top
             { key: 't_cell_cat', angle: 270 },   // Bottom
-            { key: 'hodgkin_cat', angle: 0 },    // Right
-            { key: 'plasma_cat', angle: 90 }     // Top
+            { key: 'hodgkin_cat', angle: 0 }     // Right
         ];
 
         mainBranches.forEach(branch => {
@@ -120,7 +167,7 @@ class TreeManager {
             const y = this.config.centerY + this.config.level1Radius * Math.sin(rad);
             
             // Add Category Node
-            this.nodes.push({
+            const categoryNode = {
                 id: branch.key,
                 x: x,
                 y: y,
@@ -128,7 +175,9 @@ class TreeManager {
                 branch: branch.key,
                 title: this.data[branch.key].title,
                 color: branchColor
-            });
+            };
+            
+            this.nodes.push(categoryNode);
             
             // Add Connection from Root to Category
             const curve = this.calculateCurvePath(
@@ -157,11 +206,11 @@ class TreeManager {
                     branchColor
                 );
                 
-                childPositions.forEach(pos => {
+                childPositions.forEach((pos, childIndex) => {
                     if (!this.data[pos.key]) return;
                     
                     // Add Child Node
-                    this.nodes.push({
+                    const childNode = {
                         id: pos.key,
                         x: pos.x,
                         y: pos.y,
@@ -169,22 +218,27 @@ class TreeManager {
                         branch: branch.key,
                         title: this.data[pos.key].title,
                         color: branchColor
-                    });
+                    };
+                    
+                    // Adjust position to avoid overlap
+                    const adjustedNode = this.adjustNodePosition(childNode, this.nodes, this.nodes.length);
+                    
+                    this.nodes.push(adjustedNode);
                     
                     // Add Connection from Parent to Child
                     const childCurve = this.calculateCurvePath(
                         x, y,
-                        pos.x, pos.y,
+                        adjustedNode.x, adjustedNode.y,
                         pos.angle,
                         2
                     );
                     
                     this.connections.push({
                         from: { x: x, y: y },
-                        to: { x: pos.x, y: pos.y },
+                        to: { x: adjustedNode.x, y: adjustedNode.y },
                         control: childCurve.control,
                         color: branchColor,
-                        width: 2,
+                        width: 2.5,
                         branch: branch.key
                     });
                     
@@ -192,17 +246,17 @@ class TreeManager {
                     const grandchildren = this.getChildrenKeys(pos.key);
                     if (grandchildren.length > 0) {
                         const grandchildPositions = this.calculateRadialPositions(
-                            pos.key, pos.x, pos.y, pos.angle,
+                            pos.key, adjustedNode.x, adjustedNode.y, pos.angle,
                             this.config.level3Radius - this.config.level2Radius,
                             grandchildren,
                             branchColor
                         );
                         
-                        grandchildPositions.forEach(grandPos => {
+                        grandchildPositions.forEach((grandPos, grandIndex) => {
                             if (!this.data[grandPos.key]) return;
                             
                             // Add Grandchild Node
-                            this.nodes.push({
+                            const grandchildNode = {
                                 id: grandPos.key,
                                 x: grandPos.x,
                                 y: grandPos.y,
@@ -210,22 +264,27 @@ class TreeManager {
                                 branch: branch.key,
                                 title: this.data[grandPos.key].title,
                                 color: branchColor
-                            });
+                            };
+                            
+                            // Adjust position to avoid overlap
+                            const adjustedGrandNode = this.adjustNodePosition(grandchildNode, this.nodes, this.nodes.length);
+                            
+                            this.nodes.push(adjustedGrandNode);
                             
                             // Add Connection from Child to Grandchild
                             const grandCurve = this.calculateCurvePath(
-                                pos.x, pos.y,
-                                grandPos.x, grandPos.y,
+                                adjustedNode.x, adjustedNode.y,
+                                adjustedGrandNode.x, adjustedGrandNode.y,
                                 grandPos.angle,
                                 3
                             );
                             
                             this.connections.push({
-                                from: { x: pos.x, y: pos.y },
-                                to: { x: grandPos.x, y: grandPos.y },
+                                from: { x: adjustedNode.x, y: adjustedNode.y },
+                                to: { x: adjustedGrandNode.x, y: adjustedGrandNode.y },
                                 control: grandCurve.control,
                                 color: branchColor,
-                                width: 1.5,
+                                width: 2,
                                 branch: branch.key
                             });
                         });
@@ -275,37 +334,26 @@ class TreeManager {
             const isCat = node.type === 'cat';
             const isItem = node.type === 'item';
             
-            let style = '';
             let className = 'mind-node';
             
             if (isRoot) {
                 className += ' root';
-                style = `
-                    left: ${node.x}px; 
-                    top: ${node.y}px; 
-                    background: ${node.color};
-                `;
             } else if (isCat) {
                 className += ' cat';
-                style = `
-                    left: ${node.x}px; 
-                    top: ${node.y}px; 
-                    background: ${node.color};
-                `;
             } else {
                 className += ' item';
-                style = `
-                    left: ${node.x}px; 
-                    top: ${node.y}px;
-                `;
             }
+            
+            // Don't set color in style attribute - let CSS handle it
+            const style = `left: ${node.x}px; top: ${node.y}px;`;
             
             return `
                 <div class="${className}" 
                      data-key="${node.id}" 
                      data-type="${node.type}"
                      data-branch="${node.branch}"
-                     style="${style}">
+                     style="${style}"
+                     title="${node.title}">
                     ${node.title}
                 </div>
             `;

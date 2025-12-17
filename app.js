@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. PAN & ZOOM LOGIC
     let state = {
-        scale: 1,
+        scale: 0.9, // Start slightly zoomed out
         panning: false,
         pointX: 0,
         pointY: 0,
@@ -32,10 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Center the mind map initially
     const centerMindMap = () => {
-        state.scale = 1;
+        state.scale = 0.9;
         state.x = wrapper.offsetWidth / 2;
         state.y = wrapper.offsetHeight / 2;
         updateTransform();
+        
+        // Make sure root node is properly positioned
+        const rootNode = document.querySelector('.mind-node.root');
+        if (rootNode) {
+            rootNode.style.left = `${state.x}px`;
+            rootNode.style.top = `${state.y}px`;
+        }
     };
 
     function updateTransform() {
@@ -136,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             let type = 'gen';
                             if(tag.includes('+')) type = 'pos';
                             if(tag.includes('-')) type = 'neg';
+                            if(tag.includes('Ed')) type = 'cat';
                             return `<span class="tag ${type}">${tag}</span>`;
                         }).join('')}
                     </div>
