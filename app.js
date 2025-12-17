@@ -1,20 +1,101 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Managers
     const treeManager = new TreeManager(medicalData);
-    const treeContainer = document.getElementById('treeContent'); // This is the .zoom-layer
-    treeManager.render(treeContainer);
+    const nodeLayer = document.getElementById('nodeLayer');
+    const connectionLayer = document.getElementById('connectionLayer');
+    
+    treeManager.render(nodeLayer, connectionLayer);
 
     const searchManager = new SearchManager(medicalData, treeManager);
     const accessibilityManager = new AccessibilityManager();
     accessibilityManager.setupKeyboardNavigation();
 
-    // 2. Select Root by default
+    // 2. PAN & ZOOM LOGIC
+    const wrapper = document.getElementById('canvasWrapper');
+    const world = document.getElementById('canvasWorld');
+    
+    let state = {
+        scale: 0.8,      // Start slightly zoomed out to see structure
+        panning: false,
+        pointX: 0,
+        pointY: 0,
+        startX: 0,
+        startY: 0,
+        x: wrapper.offsetWidth / 2, // Start centered
+        y: wrapper.offsetHeight / 2
+    };
+
+    function updateTransform() {
+        world.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        document.getElementById('zoomLevelDisplay').innerText = `${Math.round(state.scale * 100)}%`;
+    }
+    
+    // Set Initial Center
+    updateTransform();
+
+    // Mouse Down (Start Pan)
+    wrapper.addEventListener('mousedown', (e) => {
+        state.panning = true;
+        state.startX = e.clientX - state.x;
+        state.startY = e.clientY - state.y;
+        wrapper.style.cursor = 'grabbing';
+    });
+
+    // Mouse Up (End Pan)
+    window.addEventListener('mouseup', () => {
+        state.panning = false;
+        wrapper.style.cursor = 'grab';
+    });
+
+    // Mouse Move (Pan)
+    window.addEventListener('mousemove', (e) => {
+        if (!state.panning) return;
+        e.preventDefault();
+        state.x = e.clientX - state.startX;
+        state.y = e.clientY - state.startY;
+        updateTransform();
+    });
+
+    // Wheel (Zoom)
+    wrapper.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const xs = (e.clientX - state.x) / state.scale;
+        const ys = (e.clientY - state.y) / state.scale;
+        const delta = -e.deltaY;
+
+        (delta > 0) ? (state.scale *= 1.1) : (state.scale /= 1.1);
+        
+        // Limits
+        state.scale = Math.min(Math.max(0.1, state.scale), 4);
+
+        state.x = e.clientX - xs * state.scale;
+        state.y = e.clientY - ys * state.scale;
+
+        updateTransform();
+    });
+
+    // Zoom Buttons
+    document.getElementById('zoomIn').addEventListener('click', () => {
+        state.scale *= 1.2;
+        updateTransform();
+    });
+    document.getElementById('zoomOut').addEventListener('click', () => {
+        state.scale /= 1.2;
+        updateTransform();
+    });
+    document.getElementById('recenterBtn').addEventListener('click', () => {
+        state.scale = 0.8;
+        state.x = wrapper.offsetWidth / 2;
+        state.y = wrapper.offsetHeight / 2;
+        updateTransform();
+    });
+
+    // 3. Select Root Default
     setTimeout(() => {
-        treeManager.selectNode('root');
         document.dispatchEvent(new CustomEvent('node-selected', { detail: { key: 'root' } }));
     }, 100);
 
-    // 3. Detail Panel Logic
+    // 4. Detail Panel Update
     document.addEventListener('node-selected', (e) => {
         const key = e.detail.key;
         const item = medicalData[key];
@@ -37,40 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             detailPanel.scrollTop = 0;
             accessibilityManager.announce(`Loaded ${item.title}`);
-        }
-    });
-
-    // 4. ZOOM & PAN LOGIC
-    let zoomLevel = 1.0;
-    const zoomLayer = document.getElementById('treeContent');
-    const zoomDisplay = document.getElementById('zoomLevelDisplay');
-
-    function updateZoom() {
-        zoomLayer.style.transform = `scale(${zoomLevel})`;
-        zoomDisplay.innerText = `${Math.round(zoomLevel * 100)}%`;
-    }
-
-    document.getElementById('zoomIn').addEventListener('click', () => {
-        zoomLevel += 0.1;
-        updateZoom();
-    });
-    document.getElementById('zoomOut').addEventListener('click', () => {
-        zoomLevel = Math.max(0.4, zoomLevel - 0.1);
-        updateZoom();
-    });
-    document.getElementById('zoomReset').addEventListener('click', () => {
-        zoomLevel = 1.0;
-        updateZoom();
-    });
-
-    // Mouse Wheel Zoom
-    const treePanel = document.getElementById('treePanel');
-    treePanel.addEventListener('wheel', (e) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            zoomLevel = Math.max(0.4, Math.min(3.0, zoomLevel + delta));
-            updateZoom();
         }
     });
 });

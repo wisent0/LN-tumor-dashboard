@@ -1,9 +1,7 @@
 :root {
     --bg: #f8fafc;
-    --c-root: #0284c7;    /* Bright Blue Center */
-    --c-cat: #0f172a;     /* Dark Navy Categories */
-    --c-item: #ffffff;    /* White Items */
-    --line-color: #94a3b8;
+    --c-root: #0284c7;    
+    --c-cat: #0f172a;     
     --text-main: #333;
     --border: #e2e8f0;
 }
@@ -23,8 +21,11 @@ header {
 }
 h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center; gap: 10px; margin: 0; }
 .search-input { padding: 6px 15px; border-radius: 20px; border: 1px solid #ccc; width: 250px; background: #f1f5f9; }
+.zoom-controls { display: flex; gap: 8px; align-items: center; background: #f1f5f9; padding: 4px 10px; border-radius: 20px; }
+.zoom-controls button { border: none; background: white; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.zoom-controls button:hover { background: #e2e8f0; }
 
-/* MAIN CONTAINER (75% Map / 25% Info) */
+/* MAIN CONTAINER */
 .container { 
     display: flex; 
     flex-direction: row; 
@@ -32,47 +33,112 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
     overflow: hidden; 
 }
 
-/* LEFT: MAP PANEL */
-.tree-panel {
+/* CANVAS WRAPPER (The Viewport) */
+.canvas-wrapper {
     flex: 3;
     background-color: #f8fafc;
-    /* Grid pattern for "Canvas" feel */
-    background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
-    background-size: 40px 40px;
-    overflow: hidden; /* We handle scroll inside the zoom wrapper */
+    /* Dot Grid Background */
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 20px 20px;
+    overflow: hidden; /* Hide overflow, we pan the world inside */
     position: relative;
-    border-right: 2px solid #ddd;
     cursor: grab;
+    user-select: none; /* Prevent text selection while dragging */
 }
-.tree-panel:active { cursor: grabbing; }
+.canvas-wrapper:active { cursor: grabbing; }
 
-/* The Scrollable Wrapper */
-.pan-container {
-    width: 100%;
-    height: 100%;
-    overflow: auto; /* Scrollbars appear here */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* CANVAS WORLD (The Moving Part) */
+.canvas-world {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    /* We use JS to set transform: translate() scale() */
+    transform-origin: 0 0; 
 }
 
-/* The Zoomable Layer */
-.zoom-layer {
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform-origin: center center;
-    padding: 100px; /* Space around the map */
-    min-width: min-content;
-    min-height: min-content;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* LAYERS */
+.connection-layer {
+    position: absolute;
+    top: -5000px;
+    left: -5000px;
+    width: 10000px;
+    height: 10000px;
+    pointer-events: none; /* Let clicks pass through lines */
+    overflow: visible;
+}
+
+.node-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* NODE STYLES */
+.mind-node {
+    position: absolute;
+    transform: translate(-50%, -50%); /* Center the div on its coordinates */
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: white;
+    border: 2px solid #ccc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 10;
+    max-width: 180px;
+    text-align: center;
+}
+
+/* Root Node */
+.mind-node[data-type="root"] {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--c-root);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border: 4px solid white;
+    box-shadow: 0 0 0 5px var(--c-root);
+    white-space: normal;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+}
+
+/* Category Nodes */
+.mind-node[data-type="cat"] {
+    background: var(--c-cat);
+    color: white;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border: none;
+    z-index: 15;
+}
+
+/* Interaction */
+.mind-node:hover { transform: translate(-50%, -50%) scale(1.1); z-index: 100; }
+.mind-node.selected { 
+    background: #FFD700 !important; 
+    color: black !important; 
+    border-color: black; 
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.1);
+}
+.mind-node.highlighted {
+    background: #fef08a;
+    border-color: #eab308;
+    box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.4);
 }
 
 /* RIGHT: DETAIL PANEL */
 .detail-panel {
     flex: 1;
     min-width: 350px;
-    max-width: 450px;
     background: white;
     overflow-y: auto; 
     padding: 25px;
@@ -80,137 +146,12 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
     z-index: 40;
 }
 
-/* --- BUTTERFLY DIAGRAM CSS --- */
-.mindmap {
-    display: flex;
-    align-items: center;
-    gap: 60px; /* Space between Left Wing - Root - Right Wing */
-}
-
-/* The Wings */
-.wing {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 20px;
-}
-
-.wing-left { align-items: flex-end; text-align: right; }
-.wing-right { align-items: flex-start; text-align: left; }
-
-/* Branches (Sub-trees) */
-.branch {
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Length of connector line */
-    position: relative;
-}
-
-/* Left Branch: Children go to the Left */
-.branch-left { flex-direction: row-reverse; }
-/* Right Branch: Children go to the Right */
-.branch-right { flex-direction: row; }
-
-/* Vertical grouping of children */
-.children-group {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 15px; /* Spacing between siblings */
-    position: relative;
-}
-
-/* --- CONNECTORS (Curved Lines) --- */
-/* We use pseudo-elements on .children-group to draw the bracket */
-
-/* Right Side Connectors */
-.wing-right .children-group { border-left: 2px solid var(--line-color); padding-left: 20px; margin-left: -20px; }
-.wing-right .branch { position: relative; }
-/* Horizontal line to node */
-.wing-right .branch::before {
-    content: ''; position: absolute; left: -20px; top: 50%; width: 20px; height: 2px; background: var(--line-color);
-}
-
-/* Left Side Connectors */
-.wing-left .children-group { border-right: 2px solid var(--line-color); padding-right: 20px; margin-right: -20px; }
-.wing-left .branch { position: relative; }
-/* Horizontal line to node */
-.wing-left .branch::before {
-    content: ''; position: absolute; right: -20px; top: 50%; width: 20px; height: 2px; background: var(--line-color);
-}
-
-/* Hide main vertical line for single child to look cleaner */
-.children-group:only-child { border: none; }
-
-
-/* --- BUBBLE STYLES --- */
-.node-btn {
-    text-decoration: none; 
-    display: inline-flex; 
-    align-items: center; 
-    justify-content: center;
-    border-radius: 8px; /* Slightly rounded rect for better text fit */
-    transition: all 0.2s ease;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border: 1px solid var(--border);
-    position: relative;
-    z-index: 5;
-    background: white;
-    color: var(--text-main);
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    max-width: 200px;
-}
-
-/* ROOT NODE */
-.node-root {
-    width: 140px; height: 140px; 
-    border-radius: 50%; /* Circle */
-    background: var(--c-root); 
-    color: white;
-    font-size: 1.2rem; 
-    font-weight: 800;
-    border: 5px solid white;
-    box-shadow: 0 0 0 4px var(--c-root);
-    text-align: center;
-    white-space: normal;
-    z-index: 10;
-}
-
-/* CATEGORY NODES (Level 1) */
-.node-cat {
-    background: var(--c-cat);
-    color: white;
-    font-weight: 700;
-    padding: 10px 20px;
-    border-radius: 30px; /* Oval */
-    border: none;
-    font-size: 0.95rem;
-}
-
-/* SELECTED STATE */
-.node-btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--c-root); }
-.node-btn.selected { 
-    background: #FFD700 !important; 
-    color: black !important; 
-    border: 2px solid black; 
-    font-weight: 800;
-    transform: scale(1.1);
-}
-.node-btn.highlighted {
-    background: #fef08a;
-    border-color: #eab308;
-    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.3);
-}
-
-/* DETAIL PANEL STYLES */
+/* DETAIL CONTENT */
 .detail-title { font-size: 1.8rem; font-weight: 800; color: var(--c-cat); margin-bottom: 5px; line-height: 1.2; }
 .tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
 .tag { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-.tag.pos { background: #dcfce7; color: #166534; } /* Green */
-.tag.neg { background: #fee2e2; color: #991b1b; } /* Red */
+.tag.pos { background: #dcfce7; color: #166534; } 
+.tag.neg { background: #fee2e2; color: #991b1b; } 
 .card { border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; background: #fff; }
 .card-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; color: #334155; border-bottom: 1px solid #eee; }
 .card-body { padding: 15px; font-size: 0.95rem; line-height: 1.6; color: #475569; }
@@ -226,16 +167,3 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
 .search-results.show { display: block; }
 .search-result-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 .search-result-item:hover { background: #f8fafc; }
-
-/* MOBILE */
-@media (max-width: 768px) {
-    .container { flex-direction: column; }
-    .tree-panel { flex: 1; border-right: none; border-bottom: 2px solid #ddd; }
-    .detail-panel { flex: 1; }
-    /* Collapse Butterfly to Vertical on Mobile */
-    .mindmap { flex-direction: column; gap: 20px; }
-    .wing { align-items: center; text-align: center; }
-    .wing-right .children-group, .wing-left .children-group { border: none; margin: 0; padding: 0; }
-    .wing-right .branch::before, .wing-left .branch::before { display: none; }
-    .branch { flex-direction: column; gap: 5px; }
-}
