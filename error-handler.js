@@ -8,7 +8,6 @@ class ErrorBoundary {
     static handleGlobalError(event) {
         event.preventDefault();
         console.error('Application error:', event.error);
-        
         this.showErrorToast(
             'Application Error',
             'Please refresh the page. ' + (event.error ? event.error.message : 'Unknown error')
@@ -36,7 +35,6 @@ class ErrorBoundary {
                 <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;">&times;</button>
             </div>
         `;
-        
         document.body.appendChild(toast);
         setTimeout(() => { if(toast.parentNode) toast.remove() }, 8000);
     }

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://polyfill.io; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:; object-src 'none'; base-uri 'self';">
+    <title>Lymphoma Dashboard - WHO 5th Ed</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default,es6,es2015" integrity="sha384-WZ1e1a5f6x4+4k+7/56+56+56+56+56+56+56+56+56+56+56+56+56+56+56+56" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" integrity="sha512-H+rGL2AG28yN7Wk7K6WXJ4K49H74z8a78+78+78+78+78+78+78+78+78+78+78+78+78+78+78+78+78+78" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <div class="medical-disclaimer" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div><strong>EDUCATIONAL USE ONLY</strong> <span id="versionDisplay" style="font-size:0.8em"></span></div>
+    </div>
+    <header>
+        <h1><i class="fas fa-brain"></i> Lymphoma Mind Map</h1>
+        <div style="position:relative">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g., 'CD30')..." aria-label="Search">
+            <div id="searchResults" role="listbox"></div>
+        </div>
+        <div class="zoom-controls">
+            <button id="zoomOut" aria-label="Zoom Out"><i class="fas fa-search-minus"></i></button>
+            <span id="zoomLevelDisplay" aria-live="polite">100%</span>
+            <button id="zoomIn" aria-label="Zoom In"><i class="fas fa-search-plus"></i></button>
+            <button id="recenterBtn"><i class="fas fa-crosshairs"></i> Center</button>
+        </div>
+    </header>
+    <div class="container">
+        <div class="canvas-wrapper" id="canvasWrapper"><div class="canvas-world" id="canvasWorld"><svg class="connection-layer" id="connectionLayer"></svg><div class="node-layer" id="nodeLayer"></div></div></div>
+        <div class="detail-panel" id="detailPanel" role="region" aria-label="Details"><div style="text-align:center;color:#666;margin-top:40px"><i class="fas fa-microscope" style="font-size:3rem;margin-bottom:15px"></i><p>Select a node to view WHO 5th Ed criteria.</p></div></div>
+    </div>
+    <script src="config.js"></script>
+    <script src="security-manager.js"></script>
+    <script src="error-handler.js"></script>
+    <script src="data.js"></script>
+    <script src="tree-manager.js"></script>
+    <script src="search-manager.js"></script>
+    <script src="accessibility-manager.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

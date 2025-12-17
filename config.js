@@ -3,48 +3,56 @@ const AppConfig = {
     // Tree layout configuration
     layout: {
         centerRadius: 0,
-        level1Radius: 280,
-        level2Radius: 450,
-        level3Radius: 620,
-        minAngleBetween: 20,
+        baseRadius: 280,   // Level 1 radius
+        radiusStep: 170,   // Distance added per level
+        minAngleBetween: 15,
         maxZoom: 3,
         minZoom: 0.3,
         zoomStep: 0.2
     },
     
-    // Branch definitions with High Contrast Colors
+    // Complete WHO 5th Ed Branch Definitions
     branches: {
         b_cell_cat: {
-            color: '#dc2626', // High contrast Red
-            name: 'B-Cell Lymphomas',
-            children: ['small_b_cat', 'aggressive_b_cat']
+            color: '#dc2626', // Red
+            name: 'Mature B-Cell',
+            children: ['small_b_cat', 'aggressive_b_cat', 'plasma_cat']
         },
         t_cell_cat: {
-            color: '#059669', // High contrast Emerald
-            name: 'T-Cell Lymphomas',
-            children: ['ptcl', 'aitl', 'alcl', 'mf', 'sezary']
+            color: '#059669', // Emerald
+            name: 'Mature T/NK-Cell',
+            children: ['nodal_t_cat', 'cut_t_cat', 'leukemic_t_cat']
         },
         hodgkin_cat: {
-            color: '#7c3aed', // High contrast Purple
-            name: 'Hodgkin Lymphomas',
+            color: '#7c3aed', // Purple
+            name: 'Hodgkin Lymphoma',
             children: ['chl', 'nlphl']
         },
-        plasma_cat: {
-            color: '#d97706', // High contrast Amber
-            name: 'Plasma Cell Disorders',
-            children: ['myeloma']
+        precursor_cat: {
+            color: '#2563eb', // Blue
+            name: 'Precursor (ALL/LBL)',
+            children: ['b_all', 't_all']
+        },
+        histio_cat: {
+            color: '#d97706', // Amber
+            name: 'Histiocytic/Dendritic',
+            children: ['lch', 'erdheim_chester']
+        },
+        id_cat: {
+            color: '#db2777', // Pink
+            name: 'Immuno-deficiency',
+            children: ['ptld', 'hiv_related']
         }
     },
     
-    // Search configuration
     search: {
         debounceTime: 300,
-        maxResults: 10,
+        maxResults: 15,
         minQueryLength: 2
     },
     
-    // Medical disclaimer text
-    disclaimer: {
-        text: 'FOR EDUCATIONAL USE ONLY. NOT FOR CLINICAL DECISION MAKING. Always verify with primary WHO literature.'
+    accessibility: {
+        focusOutlineColor: '#0056b3',
+        screenReaderClass: 'sr-only'
     }
 };

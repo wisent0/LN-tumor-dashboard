@@ -1,216 +1,171 @@
-class TreeManager {
-    constructor(data) {
-        this.data = data;
-        this.nodes = [];
-        this.connections = [];
-        this.config = AppConfig.layout; // Use central config
-    }
+// Lymphoma Data Module - WHO 5th Ed (2022)
+const medicalData = {
+    metadata: {
+        version: "2.1.0",
+        lastUpdated: "2025-01-20",
+        source: "WHO Classification of Haematolymphoid Tumours, 5th Ed",
+        clinicalDisclaimer: "Educational use only. Not for primary diagnosis."
+    },
 
-    // [Previous calculateCurvePath method remains the same]
-    calculateCurvePath(x1, y1, x2, y2, branchAngle, depth) {
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
-        const perpendicular = angle + Math.PI / 2;
-        const curveIntensity = Math.min(distance * 0.3, 100);
-        const cp1x = x1 + Math.cos(angle) * distance * 0.5 + Math.cos(perpendicular) * curveIntensity;
-        const cp1y = y1 + Math.sin(angle) * distance * 0.5 + Math.sin(perpendicular) * curveIntensity;
-        return { start: { x: x1, y: y1 }, control: { x: cp1x, y: cp1y }, end: { x: x2, y: y2 } };
-    }
+    root: {
+        title: "Lymphoma Triage",
+        tags: ["WHO 5th Ed"],
+        content: `
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-header">Diagnostic Approach</div>
+                    <div class="card-body">
+                        <p><b>WHO 5th Edition (2022)</b> multiparametric approach:</p>
+                        <ul>
+                            <li><b>Morphology:</b> Cell size, nuclear shape, pattern.</li>
+                            <li><b>Immunophenotype:</b> B-cell, T-cell, NK-cell markers.</li>
+                            <li><b>Genetics:</b> Essential definitions (MYC, BCL2, ALK).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>`
+    },
 
-    calculateRadialPositions(parentKey, parentX, parentY, parentAngle, radius, items, branchColor) {
-        const positions = [];
-        const totalItems = items.length;
-        if (totalItems === 0) return positions;
-        const spread = Math.min(140, Math.max(60, totalItems * 30));
-        const startAngle = parentAngle - (spread / 2);
-        const angleStep = totalItems === 1 ? 0 : spread / (totalItems - 1);
-        
-        items.forEach((itemKey, index) => {
-            const angle = totalItems === 1 ? parentAngle : startAngle + (index * angleStep);
-            const rad = angle * (Math.PI / 180);
-            positions.push({
-                key: itemKey,
-                x: parentX + radius * Math.cos(rad),
-                y: parentY + radius * Math.sin(rad),
-                angle: angle
-            });
-        });
-        return positions;
-    }
-
-    adjustNodePosition(node, existingNodes) {
-        const minDistance = 90;
-        let attempts = 0;
-        while (attempts < 50) {
-            let overlap = false;
-            for (const other of existingNodes) {
-                if (node.id === other.id) continue;
-                const dx = node.x - other.x;
-                const dy = node.y - other.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < minDistance) {
-                    overlap = true;
-                    // Push away
-                    node.x += (dx/dist || 1) * 10;
-                    node.y += (dy/dist || 1) * 10;
-                    break;
-                }
-            }
-            if (!overlap) break;
-            attempts++;
-        }
-        return node;
-    }
-
-    calculateLayout() {
-        this.nodes = [];
-        this.connections = [];
-        
-        // Root
-        this.nodes.push({
-            id: 'root', x: 0, y: 0, type: 'root', branch: 'root',
-            title: this.data['root'].title, color: 'var(--c-root)'
-        });
-
-        const mainBranches = [
-            { key: 'b_cell_cat', angle: 180 },
-            { key: 'plasma_cat', angle: 90 },
-            { key: 't_cell_cat', angle: 270 },
-            { key: 'hodgkin_cat', angle: 0 }
-        ];
-
-        mainBranches.forEach(branch => {
-            if (!this.data[branch.key]) return;
-            // Use config colors
-            const branchColor = AppConfig.branches[branch.key]?.color || '#000';
-            const rad = branch.angle * (Math.PI / 180);
-            const x = this.config.level1Radius * Math.cos(rad);
-            const y = this.config.level1Radius * Math.sin(rad);
-            
-            this.nodes.push({
-                id: branch.key, x, y, type: 'cat', branch: branch.key,
-                title: this.data[branch.key].title, color: branchColor
-            });
-            
-            // Connection
-            const curve = this.calculateCurvePath(0, 0, x, y, branch.angle, 1);
-            this.connections.push({
-                from: {x:0, y:0}, to: {x,y}, control: curve.control,
-                color: branchColor, width: 4, branch: branch.key
-            });
-
-            // Children
-            const children = this.getChildrenKeys(branch.key);
-            const childPositions = this.calculateRadialPositions(
-                branch.key, x, y, branch.angle,
-                this.config.level2Radius - this.config.level1Radius,
-                children, branchColor
-            );
-
-            childPositions.forEach(pos => {
-                if(!this.data[pos.key]) return;
-                const childNode = {
-                    id: pos.key, x: pos.x, y: pos.y, type: 'item',
-                    branch: branch.key, title: this.data[pos.key].title, color: branchColor
-                };
-                const adjusted = this.adjustNodePosition(childNode, this.nodes);
-                this.nodes.push(adjusted);
-                
-                const cCurve = this.calculateCurvePath(x, y, adjusted.x, adjusted.y, pos.angle, 2);
-                this.connections.push({
-                    from: {x,y}, to: {x: adjusted.x, y: adjusted.y}, control: cCurve.control,
-                    color: branchColor, width: 2.5, branch: branch.key
-                });
-
-                // Grandchildren
-                const grandChildren = this.getChildrenKeys(pos.key);
-                const grandPositions = this.calculateRadialPositions(
-                    pos.key, adjusted.x, adjusted.y, pos.angle,
-                    this.config.level3Radius - this.config.level2Radius,
-                    grandChildren, branchColor
-                );
-
-                grandPositions.forEach(gPos => {
-                    if(!this.data[gPos.key]) return;
-                    const gNode = {
-                        id: gPos.key, x: gPos.x, y: gPos.y, type: 'item',
-                        branch: branch.key, title: this.data[gPos.key].title, color: branchColor
-                    };
-                    const adjG = this.adjustNodePosition(gNode, this.nodes);
-                    this.nodes.push(adjG);
-
-                    const gCurve = this.calculateCurvePath(adjusted.x, adjusted.y, adjG.x, adjG.y, gPos.angle, 3);
-                    this.connections.push({
-                        from: {x:adjusted.x,y:adjusted.y}, to: {x: adjG.x, y: adjG.y}, control: gCurve.control,
-                        color: branchColor, width: 2, branch: branch.key
-                    });
-                });
-            });
-        });
-    }
-
-    getChildrenKeys(key) {
-        const branchDef = AppConfig.branches[key];
-        if(branchDef) return branchDef.children;
-
-        // Hardcoded Level 2 mappings (kept for specific structure)
-        const map = {
-            'small_b_cat': ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy'],
-            'aggressive_b_cat': ['dlbcl', 'hgbl', 'burkitt']
-        };
-        return map[key] || [];
-    }
-
-    render(nodeContainer, connectionContainer) {
-        this.calculateLayout();
-        
-        let svgHtml = '';
-        this.connections.forEach(conn => {
-            svgHtml += `
-                <path d="M ${conn.from.x} ${conn.from.y} 
-                         Q ${conn.control.x} ${conn.control.y}
-                           ${conn.to.x} ${conn.to.y}" 
-                      stroke="${conn.color}" stroke-width="${conn.width}" fill="none" 
-                      stroke-linecap="round" opacity="0.8" class="connection-glow" />`;
-        });
-        connectionContainer.innerHTML = svgHtml;
-
-        nodeContainer.innerHTML = this.nodes.map(node => {
-            const classes = `mind-node ${node.type}`;
-            return `<div class="${classes}" data-key="${node.id}" data-branch="${node.branch}"
-                     style="left: ${node.x}px; top: ${node.y}px;" title="${node.title}">
-                    ${SecurityManager.sanitizeHTML(node.title)}
-                </div>`;
-        }).join('');
-
-        this.setupListeners();
-    }
+    // --- MATURE B-CELL ---
+    b_cell_cat: { title: "Mature B-Cell", tags:["CD20+", "PAX5+"], color: "#dc2626", content: "<div>Neoplasms of mature B-cells.</div>" },
     
-    // [Listeners and helper methods same as before]
-    setupListeners() {
-        document.querySelectorAll('.mind-node').forEach(node => {
-            node.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.selectNode(node.dataset.key);
-                document.dispatchEvent(new CustomEvent('node-selected', { detail: { key: node.dataset.key } }));
-            });
-        });
+    small_b_cat: { title: "Small B-Cell", tags:["Low Grade"], color: "#dc2626", content: "<div><b>Diff Dx:</b> CD5+ (CLL, MCL), CD10+ (FL), Neg (MZL, LPL).</div>" },
+    cll_sll: {
+        title: "CLL / SLL",
+        tags: ["CD5+", "CD23+", "LEF1+"],
+        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>Micro:</b> Small lymphs, proliferation centers.</li><li><b>IHC:</b> CD5+, CD23+, LEF1+, CD200+.</li><li><b>Genetics:</b> del(13q) (good), del(17p) (bad).</li></ul></div></div></div>`
+    },
+    mantle: {
+        title: "Mantle Cell",
+        tags: ["CD5+", "CyclinD1+"],
+        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>IHC:</b> CD5+, Cyclin D1+, SOX11+. CD23-.</li><li><b>Genetics:</b> t(11;14).</li></ul></div></div></div>`
+    },
+    follicular: {
+        title: "Follicular",
+        tags: ["CD10+", "BCL2+"],
+        content: `<div class="content-grid"><div class="card"><div class="card-header">Diagnosis</div><div class="card-body"><ul><li><b>IHC:</b> CD10+, BCL6+, BCL2+.</li><li><b>Genetics:</b> t(14;18).</li></ul></div></div></div>`
+    },
+    marginal: {
+        title: "Marginal Zone",
+        tags: ["Exclusion"],
+        content: `<div>MALT (Extranodal), Nodal, or Splenic types. Diagnosis of exclusion (CD5-/CD10-).</div>`
+    },
+    lpl: {
+        title: "LPL / Waldenström",
+        tags: ["MYD88", "IgM"],
+        content: `<div>Plasmacytoid lymphs, IgM spike. <i>MYD88</i> L265P mutation.</div>`
+    },
+    hairy: {
+        title: "Hairy Cell",
+        tags: ["BRAF", "CD103+"],
+        content: `<div>"Hairy" projections, Annexin A1+, <i>BRAF</i> V600E.</div>`
+    },
+
+    aggressive_b_cat: { title: "Aggressive B-Cell", tags:["High Grade"], color: "#dc2626", content: "<div>High Ki67, diffuse growth.</div>" },
+    dlbcl: {
+        title: "DLBCL, NOS",
+        tags: ["Most Common"],
+        content: `<div>Large B-cells. Classify by Hans (GCB vs ABC). Rule out Double Hit.</div>`
+    },
+    hgbl: {
+        title: "High Grade B-Cell",
+        tags: ["Double Hit"],
+        content: `<div><i>MYC</i> and <i>BCL2</i> rearrangements (Double Hit). Aggressive.</div>`
+    },
+    burkitt: {
+        title: "Burkitt",
+        tags: ["t(8;14)", "MYC"],
+        content: `<div>Starry sky pattern. CD10+, BCL6+, Ki67~100%. <i>MYC</i> translocation.</div>`
+    },
+
+    plasma_cat: { title: "Plasma Cell", tags:["CD138+"], color: "#dc2626", content: "<div>Terminally differentiated B-cells.</div>" },
+    myeloma: {
+        title: "Myeloma",
+        tags: ["CRAB"],
+        content: `<div>Clonal plasma cells + CRAB (Calcium, Renal, Anemia, Bone). CD138+, CD38+.</div>`
+    },
+
+    // --- MATURE T-CELL ---
+    t_cell_cat: { title: "Mature T/NK-Cell", tags:["CD3+"], color: "#059669", content: "<div>Post-thymic T-cells.</div>" },
+    nodal_t_cat: { title: "Nodal T-Cell", tags:["Aggressive"], color: "#059669", content: "<div>Primary nodal involvement.</div>" },
+    ptcl: {
+        title: "PTCL, NOS",
+        tags: ["Exclusion"],
+        content: `<div>Diagnosis of exclusion. Variable phenotype.</div>`
+    },
+    aitl: {
+        title: "AITL (nTFH)",
+        tags: ["TFH Markers"],
+        content: `<div>TFH origin (CD10+, PD1+, CXCL13+). High endothelial venules, EBV+ B-cells.</div>`
+    },
+    alcl: {
+        title: "ALCL",
+        tags: ["CD30+", "ALK+/-"],
+        content: `<div>Hallmark cells (kidney nuclei). CD30 intense. ALK+ (better prognosis) or ALK-.</div>`
+    },
+
+    cut_t_cat: { title: "Cutaneous T-Cell", tags:["Skin"], color: "#059669", content: "<div>Primary skin involvement.</div>" },
+    mf: {
+        title: "Mycosis Fungoides",
+        tags: ["Epidermotropism"],
+        content: `<div>Cerebriform nuclei, Pautrier microabscesses. CD4+.</div>`
+    },
+    sezary: {
+        title: "Sézary Syndrome",
+        tags: ["Leukemic"],
+        content: `<div>Triad: Erythroderma, Lymphadenopathy, Circulating Sézary cells.</div>`
+    },
+    leukemic_t_cat: { title: "Leukemic T-Cell", tags:["Blood"], color: "#059669", content: "<div>T-PLL, T-LGL.</div>" },
+
+    // --- HODGKIN ---
+    hodgkin_cat: { title: "Hodgkin", tags:["RS Cells"], color: "#7c3aed", content: "<div>Reed-Sternberg cells.</div>" },
+    chl: {
+        title: "Classic CHL",
+        tags: ["CD30+", "CD15+"],
+        content: `<div>Binucleate RS cells. CD30+, CD15+, PAX5(dim). CD20/CD45 neg.</div>`
+    },
+    nlphl: {
+        title: "NLPHL",
+        tags: ["Popcorn Cells"],
+        content: `<div>LP cells. CD20+, CD45+, OCT2+. CD30/CD15 neg.</div>`
+    },
+
+    // --- PRECURSOR ---
+    precursor_cat: { title: "Precursor", tags:["Blasts"], color: "#2563eb", content: "<div>Immature blasts (TdT+).</div>" },
+    b_all: {
+        title: "B-ALL",
+        tags: ["CD19+", "TdT+"],
+        content: `<div>B-lymphoblasts. CD19+, CD10+, PAX5+, TdT+. Check genetics (Ph+, etc).</div>`
+    },
+    t_all: {
+        title: "T-ALL",
+        tags: ["CD3+", "TdT+"],
+        content: `<div>Mediastinal mass. cCD3+, CD7+, TdT+.</div>`
+    },
+
+    // --- HISTIOCYTIC ---
+    histio_cat: { title: "Histiocytic", tags:["CD68+"], color: "#d97706", content: "<div>Histiocyte/Dendritic neoplasms.</div>" },
+    lch: {
+        title: "Langerhans Cell",
+        tags: ["CD1a+", "Langerin"],
+        content: `<div>Grooved nuclei, eosinophils. CD1a+, Langerin+, S100+. BRAF V600E.</div>`
+    },
+    erdheim_chester: {
+        title: "Erdheim-Chester",
+        tags: ["Foamy", "BRAF"],
+        content: `<div>Foamy histiocytes. CD68+, CD163+. CD1a neg. Bone pain.</div>`
+    },
+
+    // --- IMMUNODEFICIENCY ---
+    id_cat: { title: "Immuno-deficiency", tags:["EBV", "Tx"], color: "#db2777", content: "<div>Post-transplant or HIV associated.</div>" },
+    ptld: {
+        title: "PTLD",
+        tags: ["Transplant"],
+        content: `<div>Post-transplant. Range from hyperplasia to lymphoma (usually EBV+).</div>`
+    },
+    hiv_related: {
+        title: "HIV-Related",
+        tags: ["HHV8"],
+        content: `<div>PEL, Plasmablastic, Burkitt. Often HHV8/EBV driven.</div>`
     }
-    selectNode(key) {
-        document.querySelectorAll('.mind-node').forEach(n => n.classList.remove('selected'));
-        const target = document.querySelector(`.mind-node[data-key="${key}"]`);
-        if(target) target.classList.add('selected');
-    }
-    highlightNode(key, highlight) {
-        const target = document.querySelector(`.mind-node[data-key="${key}"]`);
-        if(target) highlight ? target.classList.add('highlighted') : target.classList.remove('highlighted');
-    }
-    clearHighlights() {
-        document.querySelectorAll('.highlighted').forEach(n => n.classList.remove('highlighted'));
-    }
-    getAllNodeKeys() { return this.nodes.map(n => n.id); }
-}
+};
