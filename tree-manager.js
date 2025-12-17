@@ -1,18 +1,18 @@
-// Tree Manager Module - ALWAYS EXPANDED (Radial Mind Map Style)
+// Tree Manager - Butterfly Layout (Left/Right Split)
 class TreeManager {
     constructor(data) {
         this.data = data;
         this.treeStructure = this.buildTreeStructure();
         this.selectedNode = null;
-        // No expandedNodes Set needed because everything is expanded by default
+        this.highlightedNodes = new Set();
     }
 
     buildTreeStructure() {
         return {
             root: {
                 key: 'root',
-                children: [
-                    // 1. B-CELL
+                // Define Explicit Groups for Balance
+                leftChildren: [
                     {
                         key: 'b_cell_cat',
                         children: [
@@ -29,8 +29,9 @@ class TreeManager {
                                 children: [ { key: 'myeloma' } ]
                             }
                         ]
-                    },
-                    // 2. T-CELL
+                    }
+                ],
+                rightChildren: [
                     {
                         key: 't_cell_cat',
                         children: [
@@ -44,10 +45,13 @@ class TreeManager {
                             }
                         ]
                     },
-                    // 3. HODGKIN
                     {
                         key: 'hodgkin_cat',
                         children: [ { key: 'chl' }, { key: 'nlphl' } ]
+                    },
+                    {
+                        key: 'histio_cat',
+                        children: [ { key: 'lch' } ]
                     }
                 ]
             }
@@ -56,37 +60,63 @@ class TreeManager {
 
     render(container) {
         if (!container) return;
-        container.innerHTML = `<ul class="tree">${this.generateTreeHTML(this.treeStructure.root)}</ul>`;
+        
+        // Render Butterfly Structure
+        const rootNode = this.treeStructure.root;
+        const rootItem = this.data['root'];
+
+        let html = `
+        <div class="mindmap">
+            <div class="wing wing-left">
+                ${rootNode.leftChildren.map(child => this.generateBranchHTML(child, 'left')).join('')}
+            </div>
+
+            <button class="node-btn node-root" data-key="root">
+                ${rootItem.title}
+            </button>
+
+            <div class="wing wing-right">
+                ${rootNode.rightChildren.map(child => this.generateBranchHTML(child, 'right')).join('')}
+            </div>
+        </div>
+        `;
+
+        container.innerHTML = html;
         this.setupEventListeners();
         
-        // Restore highlight
+        // Restore selection
         if (this.selectedNode) {
             const btn = document.querySelector(`.node-btn[data-key="${this.selectedNode}"]`);
             if (btn) btn.classList.add('selected');
         }
     }
 
-    generateTreeHTML(node) {
+    // Recursive function to generate branches
+    generateBranchHTML(node, side) {
         const item = this.data[node.key];
         if (!item) return '';
 
         const hasChildren = node.children && node.children.length > 0;
         
-        // No toggle icon needed
-        let html = `<li>
-            <button class="node-btn" 
-                    data-key="${node.key}">
-                <span>${item.title}</span>
-            </button>`;
+        // Determine style classes
+        const branchClass = side === 'left' ? 'branch-left' : 'branch-right';
+        const isCategory = node.key.includes('_cat');
+        const nodeClass = isCategory ? 'node-cat' : 'node-item';
+
+        let html = `
+            <div class="branch ${branchClass}">
+                <button class="node-btn ${nodeClass}" data-key="${node.key}">
+                    ${item.title}
+                </button>
+        `;
 
         if (hasChildren) {
-            // ALWAYS Render Children (No 'hidden' class)
-            html += `<ul>
-                        ${node.children.map(child => this.generateTreeHTML(child)).join('')}
-                     </ul>`;
+            html += `<div class="children-group">
+                        ${node.children.map(child => this.generateBranchHTML(child, side)).join('')}
+                     </div>`;
         }
-        
-        html += `</li>`;
+
+        html += `</div>`; // Close branch
         return html;
     }
 
@@ -101,13 +131,10 @@ class TreeManager {
     }
 
     selectNode(key) {
-        // Remove previous selection
         if (this.selectedNode) {
             const prev = document.querySelector(`.node-btn[data-key="${this.selectedNode}"]`);
             if (prev) prev.classList.remove('selected');
         }
-        
-        // Add new selection
         const curr = document.querySelector(`.node-btn[data-key="${key}"]`);
         if (curr) curr.classList.add('selected');
         this.selectedNode = key;
@@ -116,8 +143,13 @@ class TreeManager {
     highlightNode(key, highlight = true) {
         const btn = document.querySelector(`.node-btn[data-key="${key}"]`);
         if (btn) {
-            if (highlight) btn.classList.add('highlighted');
-            else btn.classList.remove('highlighted');
+            if (highlight) {
+                btn.classList.add('highlighted');
+                // Auto scroll to highlighted node if searched
+                btn.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+            } else {
+                btn.classList.remove('highlighted');
+            }
         }
     }
 
@@ -126,12 +158,16 @@ class TreeManager {
     }
 
     getAllNodeKeys() {
-        const keys = [];
-        const collect = (node) => {
-            keys.push(node.key);
-            if (node.children) node.children.forEach(collect);
+        // Helper to crawl the complex structure
+        const keys = ['root'];
+        const traverse = (nodes) => {
+            nodes.forEach(node => {
+                keys.push(node.key);
+                if (node.children) traverse(node.children);
+            });
         };
-        collect(this.treeStructure.root);
+        traverse(this.treeStructure.root.leftChildren);
+        traverse(this.treeStructure.root.rightChildren);
         return keys;
     }
 }

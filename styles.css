@@ -1,9 +1,9 @@
 :root {
-    --bg: #ffffff;
-    --c-root: #0089cc;    /* Mind Map Blue Center */
-    --c-cat: #005f88;     /* Dark Blue Categories */
+    --bg: #f8fafc;
+    --c-root: #0284c7;    /* Bright Blue Center */
+    --c-cat: #0f172a;     /* Dark Navy Categories */
     --c-item: #ffffff;    /* White Items */
-    --line-color: #0089cc;
+    --line-color: #94a3b8;
     --text-main: #333;
     --border: #e2e8f0;
 }
@@ -19,97 +19,129 @@ header {
     align-items: center; 
     background: white; 
     height: 60px;
-    z-index: 10; 
+    z-index: 50; 
 }
 h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center; gap: 10px; margin: 0; }
-.search-input { padding: 6px 10px 6px 30px; border-radius: 20px; border: 1px solid #ccc; width: 250px; background: #f8fafc; }
+.search-input { padding: 6px 15px; border-radius: 20px; border: 1px solid #ccc; width: 250px; background: #f1f5f9; }
 
-/* MAIN CONTAINER - 75/25 SPLIT */
+/* MAIN CONTAINER (75% Map / 25% Info) */
 .container { 
     display: flex; 
-    flex-direction: row; /* Horizontal layout */
+    flex-direction: row; 
     flex: 1; 
     overflow: hidden; 
 }
 
-/* LEFT: TREE PANEL (75%) */
+/* LEFT: MAP PANEL */
 .tree-panel {
-    flex: 3; /* 75% width */
-    background-image: radial-gradient(#e0f2fe 1px, transparent 1px);
-    background-size: 30px 30px;
-    background-color: #f8fbfd;
-    overflow: auto; 
-    display: flex;
-    justify-content: center; /* Center the root horizontally */
-    padding: 50px;
+    flex: 3;
+    background-color: #f8fafc;
+    /* Grid pattern for "Canvas" feel */
+    background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+    background-size: 40px 40px;
+    overflow: hidden; /* We handle scroll inside the zoom wrapper */
     position: relative;
     border-right: 2px solid #ddd;
+    cursor: grab;
+}
+.tree-panel:active { cursor: grabbing; }
+
+/* The Scrollable Wrapper */
+.pan-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Scrollbars appear here */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* RIGHT: DETAIL PANEL (25%) */
+/* The Zoomable Layer */
+.zoom-layer {
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: center center;
+    padding: 100px; /* Space around the map */
+    min-width: min-content;
+    min-height: min-content;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* RIGHT: DETAIL PANEL */
 .detail-panel {
-    flex: 1; /* 25% width */
-    min-width: 350px; /* Don't get too small */
+    flex: 1;
+    min-width: 350px;
+    max-width: 450px;
     background: white;
     overflow-y: auto; 
-    padding: 20px;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.05);
-    z-index: 20;
+    padding: 25px;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.05);
+    z-index: 40;
 }
 
-/* --- MIND MAP CSS TREE STRUCTURE --- */
-.tree {
+/* --- BUTTERFLY DIAGRAM CSS --- */
+.mindmap {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    gap: 60px; /* Space between Left Wing - Root - Right Wing */
 }
 
-.tree ul {
-    padding-top: 30px; 
+/* The Wings */
+.wing {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+}
+
+.wing-left { align-items: flex-end; text-align: right; }
+.wing-right { align-items: flex-start; text-align: left; }
+
+/* Branches (Sub-trees) */
+.branch {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Length of connector line */
     position: relative;
+}
+
+/* Left Branch: Children go to the Left */
+.branch-left { flex-direction: row-reverse; }
+/* Right Branch: Children go to the Right */
+.branch-right { flex-direction: row; }
+
+/* Vertical grouping of children */
+.children-group {
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    gap: 15px; /* Spacing between siblings */
+    position: relative;
 }
 
-.tree li {
-    float: left; text-align: center; list-style-type: none;
-    position: relative; padding: 30px 10px 0 10px; /* Spacing between bubbles */
+/* --- CONNECTORS (Curved Lines) --- */
+/* We use pseudo-elements on .children-group to draw the bracket */
+
+/* Right Side Connectors */
+.wing-right .children-group { border-left: 2px solid var(--line-color); padding-left: 20px; margin-left: -20px; }
+.wing-right .branch { position: relative; }
+/* Horizontal line to node */
+.wing-right .branch::before {
+    content: ''; position: absolute; left: -20px; top: 50%; width: 20px; height: 2px; background: var(--line-color);
 }
 
-/* CONNECTING LINES */
-/* Vertical line from parent down to children */
-.tree li::before, .tree li::after {
-    content: ''; 
-    position: absolute; top: 0; right: 50%;
-    border-top: 2px solid var(--line-color); 
-    width: 50%; height: 30px;
-}
-.tree li::after { 
-    right: auto; left: 50%; 
-    border-left: 2px solid var(--line-color); 
+/* Left Side Connectors */
+.wing-left .children-group { border-right: 2px solid var(--line-color); padding-right: 20px; margin-right: -20px; }
+.wing-left .branch { position: relative; }
+/* Horizontal line to node */
+.wing-left .branch::before {
+    content: ''; position: absolute; right: -20px; top: 50%; width: 20px; height: 2px; background: var(--line-color);
 }
 
-/* Remove connectors from only child */
-.tree li:only-child::after, .tree li:only-child::before { display: none; }
-.tree li:only-child { padding-top: 0; }
+/* Hide main vertical line for single child to look cleaner */
+.children-group:only-child { border: none; }
 
-/* Remove connectors from first/last nodes to curve them */
-.tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-.tree li:last-child::before { 
-    border-right: 2px solid var(--line-color); 
-    border-radius: 0 5px 0 0; 
-}
-.tree li:first-child::after { 
-    border-radius: 5px 0 0 0; 
-}
-
-/* Downward connector from parent */
-.tree ul ul::before {
-    content: ''; 
-    position: absolute; top: 0; left: 50%;
-    border-left: 2px solid var(--line-color); 
-    width: 0; height: 30px;
-}
 
 /* --- BUBBLE STYLES --- */
 .node-btn {
@@ -117,84 +149,72 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
     display: inline-flex; 
     align-items: center; 
     justify-content: center;
-    border-radius: 50px; /* Oval shape */
+    border-radius: 8px; /* Slightly rounded rect for better text fit */
     transition: all 0.2s ease;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border: 2px solid transparent;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
     position: relative;
     z-index: 5;
-    white-space: nowrap; /* Keep text on one line if possible */
+    background: white;
+    color: var(--text-main);
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    max-width: 200px;
 }
 
-/* LEVEL 1: ROOT NODE (Big Blue Center) */
-.node-btn[data-key="root"] {
+/* ROOT NODE */
+.node-root {
     width: 140px; height: 140px; 
-    border-radius: 50%;
+    border-radius: 50%; /* Circle */
     background: var(--c-root); 
     color: white;
-    font-size: 1.3rem; 
+    font-size: 1.2rem; 
     font-weight: 800;
     border: 5px solid white;
     box-shadow: 0 0 0 4px var(--c-root);
-    white-space: normal;
     text-align: center;
-}
-
-/* LEVEL 2: CATEGORIES (Dark Blue) */
-.tree > li > ul > li > .node-btn {
-    background: var(--c-cat); 
-    color: white;
-    padding: 12px 25px; 
-    min-width: 120px;
-    font-weight: 700;
-    font-size: 1rem;
-}
-
-/* LEVEL 3 & 4: ITEMS (White with Blue Border) */
-.tree ul ul ul .node-btn {
-    background: white; 
-    color: #333;
-    border: 2px solid var(--c-root);
-    padding: 8px 15px; 
-    font-weight: 600; 
-    font-size: 0.85rem;
-}
-
-/* Hover & Selection */
-.node-btn:hover { 
-    transform: scale(1.1); 
-    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    white-space: normal;
     z-index: 10;
 }
+
+/* CATEGORY NODES (Level 1) */
+.node-cat {
+    background: var(--c-cat);
+    color: white;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 30px; /* Oval */
+    border: none;
+    font-size: 0.95rem;
+}
+
+/* SELECTED STATE */
+.node-btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: var(--c-root); }
 .node-btn.selected { 
-    background: #FFD700 !important; /* Gold selection */
+    background: #FFD700 !important; 
     color: black !important; 
-    border-color: black; 
-    transform: scale(1.15);
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    border: 2px solid black; 
+    font-weight: 800;
+    transform: scale(1.1);
 }
 .node-btn.highlighted {
-    animation: pulse 1s infinite;
-    background: #ffffcc;
+    background: #fef08a;
+    border-color: #eab308;
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.3);
 }
 
-/* --- DETAIL CONTENT STYLING --- */
+/* DETAIL PANEL STYLES */
 .detail-title { font-size: 1.8rem; font-weight: 800; color: var(--c-cat); margin-bottom: 5px; line-height: 1.2; }
-.detail-subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; font-style: italic; }
-
-.tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
 .tag { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-.tag.pos { background: #dcfce7; color: #166534; }
-.tag.neg { background: #fee2e2; color: #991b1b; }
-.tag.gen { background: #e0f2fe; color: #075985; }
-
+.tag.pos { background: #dcfce7; color: #166534; } /* Green */
+.tag.neg { background: #fee2e2; color: #991b1b; } /* Red */
 .card { border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; background: #fff; }
 .card-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; color: #334155; border-bottom: 1px solid #eee; }
 .card-body { padding: 15px; font-size: 0.95rem; line-height: 1.6; color: #475569; }
 .card-body ul { margin-left: 20px; padding: 0; }
-
-.reference-section { margin-top: 30px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 0.8rem; color: #94a3b8; }
 
 /* SEARCH RESULTS */
 .search-results {
@@ -207,13 +227,15 @@ h1 { font-size: 1.2rem; color: var(--c-cat); display: flex; align-items: center;
 .search-result-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 .search-result-item:hover { background: #f8fafc; }
 
-/* MOBILE RESPONSIVE (Stack vertically on phones) */
+/* MOBILE */
 @media (max-width: 768px) {
     .container { flex-direction: column; }
-    .tree-panel { flex: 1; height: 50vh; border-right: none; border-bottom: 2px solid #ddd; }
-    .detail-panel { flex: 1; height: 50vh; }
-    /* Revert to vertical list on mobile for usability */
-    .tree li { float: none; display: block; text-align: left; padding: 5px 0; }
-    .tree li::before, .tree li::after, .tree ul ul::before { display: none; }
-    .node-btn { width: 100%; justify-content: flex-start; padding-left: 15px; margin-bottom: 5px; }
+    .tree-panel { flex: 1; border-right: none; border-bottom: 2px solid #ddd; }
+    .detail-panel { flex: 1; }
+    /* Collapse Butterfly to Vertical on Mobile */
+    .mindmap { flex-direction: column; gap: 20px; }
+    .wing { align-items: center; text-align: center; }
+    .wing-right .children-group, .wing-left .children-group { border: none; margin: 0; padding: 0; }
+    .wing-right .branch::before, .wing-left .branch::before { display: none; }
+    .branch { flex-direction: column; gap: 5px; }
 }
