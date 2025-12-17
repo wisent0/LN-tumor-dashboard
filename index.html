@@ -3,43 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lymphoma Dashboard</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
+    <title>Lymphoma Dashboard - WHO 5th Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="medical-disclaimer" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>EDUCATIONAL USE ONLY</strong>
+        <span>Not for clinical diagnosis. Verify with WHO 5th Ed.</span>
+    </div>
+
     <header>
-        <h1><i class="fas fa-dna"></i> Lymphoma Mind Map <span style="font-size:0.8rem; font-weight:400; color:#64748b; margin-left:10px;">WHO 5th Edition</span></h1>
+        <h1><i class="fas fa-brain"></i> Lymphoma Mind Map</h1>
         <div style="position:relative;">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g. CD30)...">
-            <div class="search-results" id="searchResults"></div>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g., 'CD30', 'Mantel')..." aria-label="Search lymphomas">
+            <div class="search-results" id="searchResults" role="listbox"></div>
         </div>
-        <div class="zoom-controls">
-            <button id="zoomOut" title="Zoom Out"><i class="fas fa-minus"></i></button>
-            <span id="zoomLevelDisplay">100%</span>
-            <button id="zoomIn" title="Zoom In"><i class="fas fa-plus"></i></button>
-            <button id="recenterBtn" title="Center"><i class="fas fa-crosshairs"></i> Center</button>
+        <div class="zoom-controls" id="zoomControls">
+            <button id="zoomOut" title="Zoom Out" aria-label="Zoom Out"><i class="fas fa-search-minus"></i></button>
+            <span id="zoomLevelDisplay" aria-live="polite">100%</span>
+            <button id="zoomIn" title="Zoom In" aria-label="Zoom In"><i class="fas fa-search-plus"></i></button>
+            <button id="recenterBtn" title="Center View"><i class="fas fa-crosshairs"></i> Center</button>
         </div>
     </header>
 
     <div class="container">
-        <div class="canvas-wrapper" id="canvasWrapper">
+        <div class="canvas-wrapper" id="canvasWrapper" aria-label="Mind Map Visualization">
             <div class="canvas-world" id="canvasWorld">
                 <svg class="connection-layer" id="connectionLayer"></svg>
                 <div class="node-layer" id="nodeLayer"></div>
             </div>
         </div>
 
-        <div class="detail-panel" id="detailPanel">
-            <div class="content-container" style="text-align:center; color:#888; padding-top:40px;">
+        <div class="detail-panel" id="detailPanel" role="region" aria-label="Diagnostic Details">
+            <div class="content-container" style="text-align:center; color:#475569; padding-top:40px;">
                 <i class="fas fa-microscope" style="font-size:3rem; margin-bottom:15px; color:#cbd5e1;"></i>
-                <h3 style="color:#475569">Interactive Map</h3>
-                <p>• <b>Scroll</b> to Zoom<br>• <b>Click & Drag</b> to Pan<br>• <b>Click Node</b> for Details</p>
+                <h3>Select a Node</h3>
+                <p>Click any node in the diagram to view WHO 5th Edition diagnostic criteria.</p>
             </div>
         </div>
     </div>
 
+    <script src="config.js"></script>
+    <script src="security-manager.js"></script>
+    <script src="error-handler.js"></script>
     <script src="data.js"></script>
     <script src="tree-manager.js"></script>
     <script src="search-manager.js"></script>

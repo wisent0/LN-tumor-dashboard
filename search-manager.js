@@ -1,41 +1,66 @@
-// Search Manager Module
+// Search Manager Module - Optimized
 class SearchManager {
     constructor(data, treeManager) {
         this.data = data;
         this.treeManager = treeManager;
         this.resultsContainer = document.getElementById('searchResults');
         this.searchInput = document.getElementById('searchInput');
+        this.searchIndex = this.buildSearchIndex();
         this.setupSearchListeners();
     }
 
+    buildSearchIndex() {
+        const index = {
+            titles: new Map(),
+            tags: new Map()
+        };
+        
+        Object.entries(this.data).forEach(([key, item]) => {
+            // Index titles
+            const titleWords = item.title.toLowerCase().split(/\W+/);
+            titleWords.forEach(word => {
+                if (word.length > 2) {
+                    const list = index.titles.get(word) || [];
+                    list.push(key);
+                    index.titles.set(word, list);
+                }
+            });
+            
+            // Index tags
+            item.tags.forEach(tag => {
+                const normalized = tag.toLowerCase();
+                const list = index.tags.get(normalized) || [];
+                list.push(key);
+                index.tags.set(normalized, list);
+            });
+        });
+        
+        return index;
+    }
+
     setupSearchListeners() {
-        // Debounce search to improve performance
         let searchTimeout;
         this.searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 this.search(e.target.value);
-            }, 300);
+            }, AppConfig.search.debounceTime);
         });
 
-        // Close results when clicking outside
         document.addEventListener('click', (e) => {
             if (!this.searchInput.contains(e.target) && 
                 !this.resultsContainer.contains(e.target)) {
                 this.hideResults();
             }
         });
-
-        // Handle keyboard navigation in search
+        
+        // Keyboard nav
         this.searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.hideResults();
-                this.searchInput.value = '';
-                this.treeManager.clearHighlights();
-            } else if (e.key === 'ArrowDown') {
+            if (e.key === 'Escape') this.hideResults();
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                const firstResult = this.resultsContainer.querySelector('.search-result-item');
-                if (firstResult) firstResult.focus();
+                const first = this.resultsContainer.querySelector('.search-result-item');
+                if(first) first.focus();
             }
         });
     }
@@ -43,34 +68,40 @@ class SearchManager {
     search(query) {
         const normalizedQuery = query.toLowerCase().trim();
         
-        if (!normalizedQuery) {
+        if (!normalizedQuery || normalizedQuery.length < AppConfig.search.minQueryLength) {
             this.hideResults();
             this.treeManager.clearHighlights();
             return;
         }
 
-        const results = [];
-        const allKeys = this.treeManager.getAllNodeKeys();
-
-        // Search in titles, tags, and content
-        allKeys.forEach(key => {
-            const item = this.data[key];
-            if (!item) return;
-
-            const searchText = `
-                ${item.title.toLowerCase()}
-                ${item.tags.join(' ').toLowerCase()}
-                ${item.content.toLowerCase().replace(/<[^>]*>/g, ' ')}
-            `;
-
-            if (searchText.includes(normalizedQuery)) {
-                const matchScore = this.calculateMatchScore(item, normalizedQuery);
-                results.push({ key, item, score: matchScore });
-            }
+        const resultSet = new Set();
+        
+        // Fast Index Lookup
+        this.searchIndex.titles.forEach((keys, word) => {
+            if(word.includes(normalizedQuery)) keys.forEach(k => resultSet.add(k));
+        });
+        
+        this.searchIndex.tags.forEach((keys, tag) => {
+            if(tag.includes(normalizedQuery)) keys.forEach(k => resultSet.add(k));
         });
 
-        // Sort by relevance
-        results.sort((a, b) => b.score - a.score);
+        // Content Fallback (slower, but comprehensive)
+        if (resultSet.size < 5) {
+            const allKeys = this.treeManager.getAllNodeKeys();
+            allKeys.forEach(key => {
+                const item = this.data[key];
+                if (item && item.content.toLowerCase().includes(normalizedQuery)) {
+                    resultSet.add(key);
+                }
+            });
+        }
+
+        // Scoring
+        const results = Array.from(resultSet).map(key => ({
+            key,
+            item: this.data[key],
+            score: this.calculateMatchScore(this.data[key], normalizedQuery)
+        })).sort((a, b) => b.score - a.score);
 
         this.displayResults(results);
         this.highlightResults(results);
@@ -78,32 +109,17 @@ class SearchManager {
 
     calculateMatchScore(item, query) {
         let score = 0;
+        if (item.title.toLowerCase() === query) score += 100;
+        else if (item.title.toLowerCase().includes(query)) score += 50;
         
-        // Title matches are most important
-        if (item.title.toLowerCase().includes(query)) {
-            score += 100;
-            // Exact title match gets bonus
-            if (item.title.toLowerCase() === query) {
-                score += 50;
-            }
-        }
-
-        // Tag matches are important
         item.tags.forEach(tag => {
-            if (tag.toLowerCase().includes(query)) {
-                score += 30;
-            }
+            if (tag.toLowerCase().includes(query)) score += 30;
         });
-
-        // Content matches
-        const content = item.content.toLowerCase().replace(/<[^>]*>/g, ' ');
-        if (content.includes(query)) {
-            score += 10;
-            // Multiple occurrences in content
-            const occurrences = (content.match(new RegExp(query, 'g')) || []).length;
-            score += occurrences * 5;
-        }
-
+        
+        // Content Check
+        const cleanContent = item.content.replace(/<[^>]*>/g, ' ').toLowerCase();
+        if (cleanContent.includes(query)) score += 10;
+        
         return score;
     }
 
@@ -114,20 +130,21 @@ class SearchManager {
             return;
         }
 
-        const html = results.slice(0, 10).map(result => { // Limit to 10 results
+        const html = results.slice(0, AppConfig.search.maxResults).map(result => {
             const { key, item } = result;
             const category = this.getCategoryFromKey(key);
             
+            // Safe rendering
             return `
                 <div class="search-result-item" 
                      data-key="${key}"
                      role="option"
                      tabindex="0">
-                    <span class="search-result-category">${category}</span>
+                    <span class="search-result-category">${SecurityManager.sanitizeHTML(category)}</span>
                     <div>
-                        <strong>${item.title}</strong>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-                            ${item.tags.slice(0, 3).map(t => `<span class="tag cat" style="margin-right: 4px;">${t}</span>`).join('')}
+                        <strong>${SecurityManager.sanitizeHTML(item.title)}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+                            ${item.tags.slice(0, 3).map(t => `<span class="tag cat" style="margin-right: 4px;">${SecurityManager.sanitizeHTML(t)}</span>`).join('')}
                         </div>
                     </div>
                 </div>
@@ -140,47 +157,18 @@ class SearchManager {
     }
 
     getCategoryFromKey(key) {
-        // Determine category based on key patterns
-        if (key === 'root') return 'Root';
-        if (key.includes('_cat')) return 'Category';
-        if (key.includes('b_cell') || ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy', 'dlbcl', 'hgbl', 'burkitt'].includes(key)) return 'B-Cell';
-        if (key.includes('t_cell') || ['ptcl', 'aitl', 'alcl', 'mf', 'sezary'].includes(key)) return 'T-Cell';
-        if (key.includes('hodgkin') || ['chl', 'nlphl'].includes(key)) return 'Hodgkin';
-        if (key.includes('plasma') || key === 'myeloma') return 'Plasma Cell';
+        if (key === 'root') return 'Triage';
+        if (key.includes('b_cell') || AppConfig.branches.b_cell_cat.children.includes(key) || ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy', 'dlbcl', 'hgbl', 'burkitt'].includes(key)) return 'B-Cell';
+        if (key.includes('t_cell') || AppConfig.branches.t_cell_cat.children.includes(key)) return 'T-Cell';
         return 'Other';
     }
 
     setupResultListeners() {
         const resultItems = this.resultsContainer.querySelectorAll('.search-result-item');
-        
         resultItems.forEach((item, index) => {
-            item.addEventListener('click', () => {
-                this.selectResult(item.dataset.key);
-            });
-
+            item.addEventListener('click', () => this.selectResult(item.dataset.key));
             item.addEventListener('keydown', (e) => {
-                switch(e.key) {
-                    case 'Enter':
-                    case ' ':
-                        e.preventDefault();
-                        this.selectResult(item.dataset.key);
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        const next = resultItems[index + 1];
-                        if (next) next.focus();
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        const prev = resultItems[index - 1];
-                        if (prev) prev.focus();
-                        else this.searchInput.focus();
-                        break;
-                    case 'Escape':
-                        this.hideResults();
-                        this.searchInput.focus();
-                        break;
-                }
+                if(e.key === 'Enter') this.selectResult(item.dataset.key);
             });
         });
     }
@@ -195,9 +183,7 @@ class SearchManager {
 
     highlightResults(results) {
         this.treeManager.clearHighlights();
-        results.forEach(result => {
-            this.treeManager.highlightNode(result.key, true);
-        });
+        results.forEach(result => this.treeManager.highlightNode(result.key, true));
     }
 
     hideResults() {
