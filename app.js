@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize
+    // 1. Initialize Managers
     const treeManager = new TreeManager(medicalData);
     const nodeLayer = document.getElementById('nodeLayer');
-    const connLayer = document.getElementById('connectionLayer');
+    const connectionLayer = document.getElementById('connectionLayer');
     const wrapper = document.getElementById('canvasWrapper');
     const world = document.getElementById('canvasWorld');
 
-    treeManager.render(nodeLayer, connLayer);
+    treeManager.render(nodeLayer, connectionLayer);
 
     // 2. Pan & Zoom State
     let state = {
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateTransform = () => {
         world.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
-        document.getElementById('zoomLevelDisplay').innerText = `${Math.round(state.scale*100)}%`;
+        document.getElementById('zoomLevelDisplay').innerText = `${Math.round(state.scale * 100)}%`;
     };
 
     // Center on load
@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTransform();
     };
 
+    // Drag Logic
     wrapper.onmousedown = (e) => {
         if(e.target.classList.contains('mind-node')) return;
         state.isDragging = true;
@@ -53,25 +54,46 @@ document.addEventListener('DOMContentLoaded', () => {
     
     window.onmouseup = () => { state.isDragging = false; wrapper.style.cursor = 'grab'; };
 
+    // Scroll Zoom
     wrapper.onwheel = (e) => {
         e.preventDefault();
-        state.scale *= e.deltaY > 0 ? 0.9 : 1.1;
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        state.scale *= delta;
         updateTransform();
     };
 
-    // 4. Search & Details
+    // 4. Search & Accessibility
     new SearchManager(medicalData, treeManager);
     new AccessibilityManager().setupKeyboardNavigation();
 
+    // 5. Detail Panel Logic
     document.addEventListener('node-selected', (e) => {
         const item = medicalData[e.detail.key];
+        const detailPanel = document.getElementById('detailPanel');
+        
         if(item) {
-            document.getElementById('detailPanel').innerHTML = `
+            // Check if content is already formatted in boxes (starts with div) or needs wrapping
+            let contentHtml = item.content;
+            
+            // If it's the old format (just text/ul), wrap it in a generic box
+            if(!contentHtml.trim().startsWith('<div')) {
+                contentHtml = `<div class="detail-box box-diagnosis"><h3>Details</h3>${contentHtml}</div>`;
+            }
+
+            detailPanel.innerHTML = `
                 <div class="content-container">
                     <h2 class="detail-title">${item.title}</h2>
-                    <div class="tag-group">${item.tags.map(t => `<span class="tag gen">${t}</span>`).join('')}</div>
-                    ${item.content}
+                    <div class="tag-group">
+                        ${item.tags.map(t => {
+                            let type = 'gen';
+                            if(t.includes('+')) type = 'pos';
+                            if(t.includes('-')) type = 'neg';
+                            return `<span class="tag ${type}">${t}</span>`;
+                        }).join('')}
+                    </div>
+                    ${contentHtml}
                 </div>`;
+            detailPanel.scrollTop = 0;
         }
     });
 });
