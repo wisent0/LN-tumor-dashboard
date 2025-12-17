@@ -3,32 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lymphoma Dashboard - WHO 5th Edition Mind Map</title>
+    <title>Lymphoma Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
-        <h1><i class="fas fa-brain"></i> Lymphoma Mind Map <span style="font-size:0.8rem; font-weight:400; color:#64748b; margin-left:10px;">WHO 5th Edition Buzan-style Visualization</span></h1>
+        <h1><i class="fas fa-dna"></i> Lymphoma Mind Map <span style="font-size:0.8rem; font-weight:400; color:#64748b; margin-left:10px;">WHO 5th Edition</span></h1>
         <div style="position:relative;">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search lymphoma types, markers (CD20, CD30)...">
+            <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g. CD30)...">
             <div class="search-results" id="searchResults"></div>
         </div>
         <div class="zoom-controls">
-            <button id="zoomOut" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+            <button id="zoomOut" title="Zoom Out"><i class="fas fa-minus"></i></button>
             <span id="zoomLevelDisplay">100%</span>
-            <button id="zoomIn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
-            <button id="recenterBtn" title="Center View"><i class="fas fa-crosshairs"></i> Center</button>
+            <button id="zoomIn" title="Zoom In"><i class="fas fa-plus"></i></button>
+            <button id="recenterBtn" title="Center"><i class="fas fa-crosshairs"></i> Center</button>
         </div>
     </header>
 
     <div class="container">
         <div class="canvas-wrapper" id="canvasWrapper">
             <div class="canvas-world" id="canvasWorld">
-                <!-- Connection lines will be drawn here -->
                 <svg class="connection-layer" id="connectionLayer"></svg>
-                <!-- Nodes will be placed here -->
                 <div class="node-layer" id="nodeLayer"></div>
             </div>
         </div>
@@ -36,15 +34,8 @@
         <div class="detail-panel" id="detailPanel">
             <div class="content-container" style="text-align:center; color:#888; padding-top:40px;">
                 <i class="fas fa-microscope" style="font-size:3rem; margin-bottom:15px; color:#cbd5e1;"></i>
-                <h3 style="color:#475569">Buzan-style Mind Map</h3>
-                <p>• <b>Click</b> nodes for details<br>• <b>Scroll</b> to Zoom<br>• <b>Drag</b> to Pan<br>• <b>Search</b> for specific lymphomas</p>
-                <div style="margin-top:30px; padding:15px; background:#f1f5f9; border-radius:10px;">
-                    <small><b>Buzan Mind Map Principles:</b><br>
-                    1. Central Image (Lymphoma Triage)<br>
-                    2. Color-coded Branches<br>
-                    3. Curved Organic Lines<br>
-                    4. One Word/Concept per Line</small>
-                </div>
+                <h3 style="color:#475569">Interactive Map</h3>
+                <p>• <b>Scroll</b> to Zoom<br>• <b>Click & Drag</b> to Pan<br>• <b>Click Node</b> for Details</p>
             </div>
         </div>
     </div>

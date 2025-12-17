@@ -1,4 +1,4 @@
-// Tree Manager - Sector-Based Radial Layout (Collision Free)
+// Tree Manager - Sector-Based Radial Layout
 class TreeManager {
     constructor(data) {
         this.data = data;
@@ -7,29 +7,26 @@ class TreeManager {
         this.config = {
             centerX: 0,
             centerY: 0,
-            level1Radius: 320,  // Distance for Categories
-            level2Radius: 550,  // Distance for Items
-            level3Radius: 750   // Distance for Sub-items
+            level1Radius: 300,
+            level2Radius: 500,
+            level3Radius: 700
         };
 
         this.branchColors = {
-            'precursor_cat': '#db2777', // Pink
-            'b_cell_cat': '#e11d48',    // Red (Largest sector)
-            'plasma_cat': '#d97706',    // Orange
-            't_cell_cat': '#059669',    // Green
-            'hodgkin_cat': '#7c3aed',   // Purple
-            'histio_cat': '#0891b2',    // Cyan
-            'id_cat': '#4b5563'         // Grey
+            'precursor_cat': '#db2777',
+            'b_cell_cat': '#e11d48',
+            'plasma_cat': '#d97706',
+            't_cell_cat': '#059669',
+            'hodgkin_cat': '#7c3aed',
+            'histio_cat': '#0891b2',
+            'id_cat': '#4b5563'
         };
     }
 
-    // --- Helper: Count all descendants to calculate sector size ---
     countDescendants(key) {
         const children = this.getChildrenKeys(key);
         let count = children.length;
-        children.forEach(child => {
-            count += this.countDescendants(child);
-        });
+        children.forEach(child => count += this.countDescendants(child));
         return count;
     }
 
@@ -43,7 +40,7 @@ class TreeManager {
             title: this.data['root'].title, color: 'var(--c-root)'
         });
 
-        // 2. Define Main Branches & Calculate Weights
+        // 2. Define Main Branches
         const mainBranches = [
             'precursor_cat', 'b_cell_cat', 'plasma_cat', 
             't_cell_cat', 'hodgkin_cat', 'histio_cat', 'id_cat'
@@ -51,23 +48,19 @@ class TreeManager {
 
         let totalWeight = 0;
         const branchWeights = mainBranches.map(key => {
-            const weight = Math.max(3, this.countDescendants(key)); // Min weight 3 ensures visibility
+            const weight = Math.max(3, this.countDescendants(key));
             totalWeight += weight;
             return { key, weight };
         });
 
-        // 3. Assign Sectors (Pie Slices)
-        let currentAngle = 0; // Start at 0 degrees (Right)
+        let currentAngle = 0;
         
         branchWeights.forEach(branch => {
             if(!this.data[branch.key]) return;
 
-            // How big is this slice? (360 degrees * fraction of total nodes)
             const sectorSize = (branch.weight / totalWeight) * 360;
-            // Center the branch in its sector
             const branchMidAngle = currentAngle + (sectorSize / 2);
             
-            // Calculate Branch Position (Level 1)
             const rad = branchMidAngle * (Math.PI / 180);
             const bx = this.config.level1Radius * Math.cos(rad);
             const by = this.config.level1Radius * Math.sin(rad);
@@ -78,17 +71,15 @@ class TreeManager {
                 title: this.data[branch.key].title, color: color
             });
 
-            // Connect Root to Branch
             const rootCurve = this.calculateCurvePath(0, 0, bx, by);
             this.connections.push({
                 from: {x:0,y:0}, to: {x:bx,y:by}, control: rootCurve.control, 
                 color: color, width: 4
             });
 
-            // 4. Distribute Children within the Sector
+            // Children
             const children = this.getChildrenKeys(branch.key);
             if(children.length > 0) {
-                // Spread children within 80% of the sector to leave gaps between sectors
                 const childSpread = sectorSize * 0.85; 
                 const startChildAngle = branchMidAngle - (childSpread / 2);
                 const step = childSpread / (children.length > 1 ? children.length - 1 : 1);
@@ -111,36 +102,8 @@ class TreeManager {
                         from: {x:bx,y:by}, to: {x:cx,y:cy}, control: childCurve.control,
                         color: color, width: 2
                     });
-
-                    // 5. Grandchildren (Level 3) - Fan out slightly
-                    const grandKids = this.getChildrenKeys(childKey);
-                    if(grandKids.length > 0) {
-                        // Small spread for grandchildren relative to their parent
-                        const grandSpread = 20; 
-                        const startGrandAngle = ang - ((grandKids.length-1)*grandSpread)/2;
-                        
-                        grandKids.forEach((gkKey, gkIdx) => {
-                            if(!this.data[gkKey]) return;
-                            const gAng = startGrandAngle + (gkIdx * grandSpread);
-                            const gRad = gAng * (Math.PI / 180);
-                            const gx = this.config.level3Radius * Math.cos(gRad);
-                            const gy = this.config.level3Radius * Math.sin(gRad);
-
-                            this.nodes.push({
-                                id: gkKey, x: gx, y: gy, type: 'item', branch: branch.key,
-                                title: this.data[gkKey].title, color: color
-                            });
-
-                            const gCurve = this.calculateCurvePath(cx, cy, gx, gy);
-                            this.connections.push({
-                                from: {x:cx,y:cy}, to: {x:gx,y:gy}, control: gCurve.control,
-                                color: color, width: 1.5
-                            });
-                        });
-                    }
                 });
             }
-
             currentAngle += sectorSize;
         });
     }
@@ -148,8 +111,6 @@ class TreeManager {
     calculateCurvePath(x1, y1, x2, y2) {
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
-        // Simple quadratic bezier control point slightly offset from midpoint
-        // This makes lines look curved but clean
         return { control: { x: mx, y: my } };
     }
 
