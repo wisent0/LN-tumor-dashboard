@@ -51,6 +51,8 @@ h1 {
     border-color: #0284c7;
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
 }
+
+/* --- BUTTON FIX: Pill Shape for Text Fitting --- */
 .zoom-controls { 
     display: flex; 
     gap: 8px; 
@@ -64,14 +66,21 @@ h1 {
     border: none; 
     background: white; 
     cursor: pointer; 
-    width: 28px; 
-    height: 28px; 
-    border-radius: 50%; 
+    /* Changed to auto width to fit text like "Center" */
+    width: auto; 
+    min-width: 32px;
+    height: 32px; 
+    padding: 0 12px; /* Padding for text */
+    border-radius: 20px; /* Pill shape */
     display: flex; 
     align-items: center; 
     justify-content: center; 
+    gap: 6px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
     transition: all 0.2s ease;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
 }
 .zoom-controls button:hover { 
     background: #e2e8f0; 
@@ -151,10 +160,10 @@ h1 {
     color: #333 !important;
 }
 
-/* Root Node - CENTERED WITH BETTER TEXT FITTING */
+/* --- ROOT FIX: Perfect Centering & Size --- */
 .mind-node.root {
-    width: 180px;
-    height: 180px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
     background: linear-gradient(135deg, #0284c7, #0369a1);
     color: white !important;
@@ -172,10 +181,12 @@ h1 {
     line-height: 1.3;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 20px;
+    padding: 10px;
     overflow: visible;
     word-break: break-word;
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    /* Ensure transform doesn't drift */
+    transform: translate(-50%, -50%);
 }
 
 /* Category Nodes - COLORFUL WITH WHITE TEXT */
@@ -204,6 +215,24 @@ h1 {
     background: white !important;
     color: #1f2937 !important; 
 }
+
+/* Branch-specific background colors for category nodes */
+.mind-node[data-branch="b_cell_cat"] { background: #e11d48 !important; border: none !important; }
+.mind-node[data-branch="t_cell_cat"] { background: #059669 !important; border: none !important; }
+.mind-node[data-branch="hodgkin_cat"] { background: #7c3aed !important; border: none !important; }
+.mind-node[data-branch="plasma_cat"] { background: #d97706 !important; border: none !important; }
+.mind-node[data-branch="precursor_cat"] { background: #db2777 !important; border: none !important; }
+.mind-node[data-branch="histio_cat"] { background: #0891b2 !important; border: none !important; }
+.mind-node[data-branch="id_cat"] { background: #4b5563 !important; border: none !important; }
+
+/* Branch-specific border colors for item nodes */
+.mind-node.item[data-branch="b_cell_cat"] { border-color: #e11d48 !important; }
+.mind-node.item[data-branch="t_cell_cat"] { border-color: #059669 !important; }
+.mind-node.item[data-branch="hodgkin_cat"] { border-color: #7c3aed !important; }
+.mind-node.item[data-branch="plasma_cat"] { border-color: #d97706 !important; }
+.mind-node.item[data-branch="precursor_cat"] { border-color: #db2777 !important; }
+.mind-node.item[data-branch="histio_cat"] { border-color: #0891b2 !important; }
+.mind-node.item[data-branch="id_cat"] { border-color: #4b5563 !important; }
 
 /* Interaction */
 .mind-node:hover { 

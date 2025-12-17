@@ -1,200 +1,173 @@
-// Tree Manager - Buzan-style Mind Map Layout
+// Tree Manager - Sector-Based Radial Layout (Collision Free)
 class TreeManager {
     constructor(data) {
         this.data = data;
         this.nodes = [];
         this.connections = [];
-        this.selectedNode = null;
-        
-        // Buzan-style mind map configuration
         this.config = {
-            centerRadius: 0,
-            level1Radius: 300,    // Increased for more categories
-            level2Radius: 500,    
-            level3Radius: 700,    
             centerX: 0,
             centerY: 0,
-            minAngleBetween: 20   
+            level1Radius: 320,  // Distance for Categories
+            level2Radius: 550,  // Distance for Items
+            level3Radius: 750   // Distance for Sub-items
         };
 
-        // Branch colors - Distinct vibrant colors
         this.branchColors = {
             'precursor_cat': '#db2777', // Pink
-            'b_cell_cat': '#e11d48',    // Red
+            'b_cell_cat': '#e11d48',    // Red (Largest sector)
             'plasma_cat': '#d97706',    // Orange
             't_cell_cat': '#059669',    // Green
             'hodgkin_cat': '#7c3aed',   // Purple
-            'histio_cat': '#0891b2'     // Cyan
+            'histio_cat': '#0891b2',    // Cyan
+            'id_cat': '#4b5563'         // Grey
         };
     }
 
-    // Calculate organic curved connections
-    calculateCurvePath(x1, y1, x2, y2, branchAngle, depth) {
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
-        const perpendicular = angle + Math.PI / 2;
-        const curveIntensity = Math.min(distance * 0.25, 120);
-        
-        const cp1x = x1 + Math.cos(angle) * distance * 0.5 + Math.cos(perpendicular) * curveIntensity;
-        const cp1y = y1 + Math.sin(angle) * distance * 0.5 + Math.sin(perpendicular) * curveIntensity;
-        
-        return { start: {x:x1, y:y1}, control: {x:cp1x, y:cp1y}, end: {x:x2, y:y2} };
-    }
-
-    // Calculate radial positions
-    calculateRadialPositions(parentKey, parentX, parentY, parentAngle, radius, items, branchColor) {
-        const positions = [];
-        const totalItems = items.length;
-        if (totalItems === 0) return positions;
-        
-        // Dynamic spread based on item count
-        const spread = Math.min(160, Math.max(60, totalItems * 25));
-        const startAngle = parentAngle - (spread / 2);
-        const angleStep = totalItems === 1 ? 0 : spread / (totalItems - 1);
-        
-        items.forEach((itemKey, index) => {
-            const angle = totalItems === 1 ? parentAngle : startAngle + (index * angleStep);
-            const rad = angle * (Math.PI / 180);
-            const x = parentX + radius * Math.cos(rad);
-            const y = parentY + radius * Math.sin(rad);
-            positions.push({ key: itemKey, x: x, y: y, angle: angle, rad: rad });
+    // --- Helper: Count all descendants to calculate sector size ---
+    countDescendants(key) {
+        const children = this.getChildrenKeys(key);
+        let count = children.length;
+        children.forEach(child => {
+            count += this.countDescendants(child);
         });
-        return positions;
-    }
-
-    // Adjust positions to avoid overlap
-    adjustNodePosition(node, existingNodes) {
-        const minDistance = 100;
-        let attempts = 0;
-        while (attempts < 50) {
-            let overlap = false;
-            for (let other of existingNodes) {
-                const dx = node.x - other.x;
-                const dy = node.y - other.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < minDistance && dist > 0) {
-                    overlap = true;
-                    const moveX = (dx/dist) * (minDistance - dist) * 1.5;
-                    const moveY = (dy/dist) * (minDistance - dist) * 1.5;
-                    node.x += moveX;
-                    node.y += moveY;
-                }
-            }
-            if (!overlap) break;
-            attempts++;
-        }
-        return node;
+        return count;
     }
 
     calculateLayout() {
         this.nodes = [];
         this.connections = [];
-        
+
         // 1. Root
         this.nodes.push({
-            id: 'root', x: this.config.centerX, y: this.config.centerY,
-            type: 'root', branch: 'root', title: this.data['root'].title, color: 'var(--c-root)'
+            id: 'root', x: 0, y: 0, type: 'root', 
+            title: this.data['root'].title, color: 'var(--c-root)'
         });
 
-        // 2. Main Categories (Spread 360 degrees)
-        const categories = [
-            { key: 'precursor_cat', angle: 220 },
-            { key: 'b_cell_cat', angle: 160 },
-            { key: 'plasma_cat', angle: 100 },
-            { key: 'hodgkin_cat', angle: 40 },
-            { key: 't_cell_cat', angle: 320 },
-            { key: 'histio_cat', angle: 270 }
+        // 2. Define Main Branches & Calculate Weights
+        const mainBranches = [
+            'precursor_cat', 'b_cell_cat', 'plasma_cat', 
+            't_cell_cat', 'hodgkin_cat', 'histio_cat', 'id_cat'
         ];
 
-        categories.forEach(cat => {
-            if (!this.data[cat.key]) return;
-            const branchColor = this.branchColors[cat.key];
-            const rad = cat.angle * (Math.PI / 180);
-            const x = this.config.centerX + this.config.level1Radius * Math.cos(rad);
-            const y = this.config.centerY + this.config.level1Radius * Math.sin(rad);
+        let totalWeight = 0;
+        const branchWeights = mainBranches.map(key => {
+            const weight = Math.max(3, this.countDescendants(key)); // Min weight 3 ensures visibility
+            totalWeight += weight;
+            return { key, weight };
+        });
 
-            // Add Cat Node
+        // 3. Assign Sectors (Pie Slices)
+        let currentAngle = 0; // Start at 0 degrees (Right)
+        
+        branchWeights.forEach(branch => {
+            if(!this.data[branch.key]) return;
+
+            // How big is this slice? (360 degrees * fraction of total nodes)
+            const sectorSize = (branch.weight / totalWeight) * 360;
+            // Center the branch in its sector
+            const branchMidAngle = currentAngle + (sectorSize / 2);
+            
+            // Calculate Branch Position (Level 1)
+            const rad = branchMidAngle * (Math.PI / 180);
+            const bx = this.config.level1Radius * Math.cos(rad);
+            const by = this.config.level1Radius * Math.sin(rad);
+            const color = this.branchColors[branch.key];
+
             this.nodes.push({
-                id: cat.key, x: x, y: y, type: 'cat', branch: cat.key,
-                title: this.data[cat.key].title, color: branchColor
+                id: branch.key, x: bx, y: by, type: 'cat', branch: branch.key,
+                title: this.data[branch.key].title, color: color
             });
 
-            // Add Connection to Root
-            const curve = this.calculateCurvePath(this.config.centerX, this.config.centerY, x, y, cat.angle, 1);
+            // Connect Root to Branch
+            const rootCurve = this.calculateCurvePath(0, 0, bx, by);
             this.connections.push({
-                from: {x:this.config.centerX, y:this.config.centerY}, to: {x:x, y:y},
-                control: curve.control, color: branchColor, width: 4, branch: cat.key
+                from: {x:0,y:0}, to: {x:bx,y:by}, control: rootCurve.control, 
+                color: color, width: 4
             });
 
-            // Process Children
-            const children = this.getChildrenKeys(cat.key);
-            if (children.length > 0) {
-                const childPositions = this.calculateRadialPositions(
-                    cat.key, x, y, cat.angle, 
-                    this.config.level2Radius - this.config.level1Radius, children, branchColor
-                );
+            // 4. Distribute Children within the Sector
+            const children = this.getChildrenKeys(branch.key);
+            if(children.length > 0) {
+                // Spread children within 80% of the sector to leave gaps between sectors
+                const childSpread = sectorSize * 0.85; 
+                const startChildAngle = branchMidAngle - (childSpread / 2);
+                const step = childSpread / (children.length > 1 ? children.length - 1 : 1);
 
-                childPositions.forEach(pos => {
-                    if (!this.data[pos.key]) return;
-                    let node = {
-                        id: pos.key, x: pos.x, y: pos.y, type: 'item', branch: cat.key,
-                        title: this.data[pos.key].title, color: branchColor
-                    };
-                    node = this.adjustNodePosition(node, this.nodes);
-                    this.nodes.push(node);
+                children.forEach((childKey, idx) => {
+                    if(!this.data[childKey]) return;
                     
-                    const childCurve = this.calculateCurvePath(x, y, node.x, node.y, pos.angle, 2);
-                    this.connections.push({
-                        from: {x:x, y:y}, to: {x:node.x, y:node.y},
-                        control: childCurve.control, color: branchColor, width: 2.5, branch: cat.key
+                    const ang = children.length === 1 ? branchMidAngle : startChildAngle + (idx * step);
+                    const cRad = ang * (Math.PI / 180);
+                    const cx = this.config.level2Radius * Math.cos(cRad);
+                    const cy = this.config.level2Radius * Math.sin(cRad);
+
+                    this.nodes.push({
+                        id: childKey, x: cx, y: cy, type: 'item', branch: branch.key,
+                        title: this.data[childKey].title, color: color
                     });
 
-                    // Grandchildren (Level 3)
-                    const grandKids = this.getChildrenKeys(pos.key);
-                    if (grandKids.length > 0) {
-                        const grandPositions = this.calculateRadialPositions(
-                            pos.key, node.x, node.y, pos.angle,
-                            this.config.level3Radius - this.config.level2Radius, grandKids, branchColor
-                        );
-                        grandPositions.forEach(gp => {
-                            if (!this.data[gp.key]) return;
-                            let gNode = {
-                                id: gp.key, x: gp.x, y: gp.y, type: 'item', branch: cat.key,
-                                title: this.data[gp.key].title, color: branchColor
-                            };
-                            gNode = this.adjustNodePosition(gNode, this.nodes);
-                            this.nodes.push(gNode);
-                            
-                            const gCurve = this.calculateCurvePath(node.x, node.y, gNode.x, gNode.y, gp.angle, 3);
+                    const childCurve = this.calculateCurvePath(bx, by, cx, cy);
+                    this.connections.push({
+                        from: {x:bx,y:by}, to: {x:cx,y:cy}, control: childCurve.control,
+                        color: color, width: 2
+                    });
+
+                    // 5. Grandchildren (Level 3) - Fan out slightly
+                    const grandKids = this.getChildrenKeys(childKey);
+                    if(grandKids.length > 0) {
+                        // Small spread for grandchildren relative to their parent
+                        const grandSpread = 20; 
+                        const startGrandAngle = ang - ((grandKids.length-1)*grandSpread)/2;
+                        
+                        grandKids.forEach((gkKey, gkIdx) => {
+                            if(!this.data[gkKey]) return;
+                            const gAng = startGrandAngle + (gkIdx * grandSpread);
+                            const gRad = gAng * (Math.PI / 180);
+                            const gx = this.config.level3Radius * Math.cos(gRad);
+                            const gy = this.config.level3Radius * Math.sin(gRad);
+
+                            this.nodes.push({
+                                id: gkKey, x: gx, y: gy, type: 'item', branch: branch.key,
+                                title: this.data[gkKey].title, color: color
+                            });
+
+                            const gCurve = this.calculateCurvePath(cx, cy, gx, gy);
                             this.connections.push({
-                                from: {x:node.x, y:node.y}, to: {x:gNode.x, y:gNode.y},
-                                control: gCurve.control, color: branchColor, width: 2, branch: cat.key
+                                from: {x:cx,y:cy}, to: {x:gx,y:gy}, control: gCurve.control,
+                                color: color, width: 1.5
                             });
                         });
                     }
                 });
             }
+
+            currentAngle += sectorSize;
         });
     }
 
-    // Mapping Parent -> Children (CRITICAL: Must match data.js)
+    calculateCurvePath(x1, y1, x2, y2) {
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
+        // Simple quadratic bezier control point slightly offset from midpoint
+        // This makes lines look curved but clean
+        return { control: { x: mx, y: my } };
+    }
+
     getChildrenKeys(key) {
         const map = {
-            'precursor_cat': ['b_all', 't_all'],
             'b_cell_cat': ['small_b_cat', 'aggressive_b_cat'],
-            'small_b_cat': ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy'],
-            'aggressive_b_cat': ['dlbcl', 'hgbl', 'burkitt', 'pbl', 'mediastinal_b'],
+            'small_b_cat': ['cll_sll', 'mantle', 'follicular', 'marginal_nodal', 'malt', 'splenic_mzl', 'lpl', 'hairy'],
+            'aggressive_b_cat': ['dlbcl_nos', 'hgbl', 'hgbl_11q', 'burkitt', 'mediastinal_b', 'pbl', 'pcns_dlbcl', 'ebv_dlbcl'],
             'plasma_cat': ['myeloma', 'plasmacytoma'],
-            't_cell_cat': ['nodal_t_cat', 'extranodal_t_cat', 'cut_t_cat'],
+            't_cell_cat': ['nodal_t_cat', 'extranodal_t_cat', 'leukemic_t_cat', 'cut_t_cat'],
             'nodal_t_cat': ['ptcl', 'aitl', 'alcl'],
-            'extranodal_t_cat': ['nkt', 'eatl', 'meitl', 'hepatosplenic', 'atll'],
-            'cut_t_cat': ['mf', 'sezary', 'pc_alcl'],
+            'extranodal_t_cat': ['nkt', 'eatl', 'meitl', 'hstcl', 'atll'],
+            'leukemic_t_cat': ['t_lgl', 't_pll'],
+            'cut_t_cat': ['mf', 'sezary', 'pc_alcl', 'lyp'],
             'hodgkin_cat': ['chl', 'nlphl'],
-            'histio_cat': ['lch', 'rosai', 'fdcs']
+            'histio_cat': ['lch', 'rosai', 'fdcs'],
+            'precursor_cat': ['b_all', 't_all'],
+            'id_cat': ['ptld']
         };
         return map[key] || [];
     }
@@ -202,20 +175,20 @@ class TreeManager {
     render(nodeContainer, connectionContainer) {
         this.calculateLayout();
         
-        let svgHtml = '';
-        this.connections.forEach(conn => {
-            svgHtml += `<path d="M ${conn.from.x} ${conn.from.y} Q ${conn.control.x} ${conn.control.y} ${conn.to.x} ${conn.to.y}" 
-                stroke="${conn.color}" stroke-width="${conn.width}" fill="none" stroke-linecap="round" opacity="0.8" />`;
+        let svg = '';
+        this.connections.forEach(c => {
+            svg += `<path d="M${c.from.x},${c.from.y} Q${c.control.x},${c.control.y} ${c.to.x},${c.to.y}" 
+                    stroke="${c.color}" stroke-width="${c.width}" fill="none" opacity="0.6"/>`;
         });
-        connectionContainer.innerHTML = svgHtml;
+        connectionContainer.innerHTML = svg;
 
-        nodeContainer.innerHTML = this.nodes.map(node => {
-            const style = `left: ${node.x}px; top: ${node.y}px;`;
-            let className = `mind-node ${node.type}`;
-            if (node.type === 'cat') style += `background: ${node.color}`;
-            return `<div class="${className}" data-key="${node.id}" data-type="${node.type}" 
-                data-branch="${node.branch}" style="${style}">${node.title}</div>`;
-        }).join('');
+        nodeContainer.innerHTML = this.nodes.map(n => `
+            <div class="mind-node ${n.type}" 
+                 style="left:${n.x}px; top:${n.y}px; ${n.type==='cat'?`background:${n.color}`:`border-color:${n.color}`}"
+                 data-key="${n.id}">
+                ${n.title}
+            </div>
+        `).join('');
 
         this.setupListeners();
     }
@@ -224,19 +197,18 @@ class TreeManager {
         document.querySelectorAll('.mind-node').forEach(n => {
             n.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const key = n.dataset.key;
-                this.selectNode(key);
-                document.dispatchEvent(new CustomEvent('node-selected', { detail: { key } }));
+                this.selectNode(n.dataset.key);
+                document.dispatchEvent(new CustomEvent('node-selected', { detail: { key: n.dataset.key } }));
             });
         });
     }
 
     selectNode(key) {
         document.querySelectorAll('.mind-node').forEach(n => n.classList.remove('selected'));
-        const t = document.querySelector(`.mind-node[data-key="${key}"]`);
-        if(t) t.classList.add('selected');
+        const target = document.querySelector(`.mind-node[data-key="${key}"]`);
+        if(target) target.classList.add('selected');
     }
-    
+
     highlightNode(key, on) {
         const t = document.querySelector(`.mind-node[data-key="${key}"]`);
         if(t) on ? t.classList.add('highlighted') : t.classList.remove('highlighted');
