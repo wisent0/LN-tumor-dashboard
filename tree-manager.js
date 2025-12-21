@@ -8,7 +8,6 @@ class TreeManager {
         this.spatialHash = new Map();
         this.cellSize = 120;
         
-        // Bind for event delegation
         this.handleNodeClick = this.handleNodeClick.bind(this);
     }
 
@@ -18,6 +17,7 @@ class TreeManager {
         this.spatialHash.get(key).push(node);
     }
 
+    // Optimized neighborhood search
     getNearbyNodes(x, y) {
         const cx = Math.floor(x / this.cellSize);
         const cy = Math.floor(y / this.cellSize);
@@ -25,16 +25,20 @@ class TreeManager {
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j <= 1; j++) {
                 const key = `${cx + i},${cy + j}`;
-                if (this.spatialHash.has(key)) nearby = nearby.concat(this.spatialHash.get(key));
+                const cell = this.spatialHash.get(key);
+                if (cell) {
+                    for(let k=0; k<cell.length; k++) nearby.push(cell[k]);
+                }
             }
         }
         return nearby;
     }
 
     getChildrenKeys(key) {
-        // 1. Check Config (Level 1)
+        // Look up children from Config first (Source of Truth for Hierarchy)
         if (AppConfig.branches[key]) return AppConfig.branches[key].children;
-        // 2. Fallback Map for Data Levels (Level 2+)
+        
+        // Hardcoded Fallback for Level 2+ structure mapping
         const map = {
             'small_b_cat': ['cll_sll', 'mantle', 'follicular', 'marginal', 'lpl', 'hairy'],
             'aggressive_b_cat': ['dlbcl', 'hgbl', 'burkitt'],
@@ -75,7 +79,6 @@ class TreeManager {
         const radius = this.config.baseRadius + ((depth - 1) * this.config.radiusStep);
         const rad = angle * (Math.PI / 180);
         
-        // Level 1: Absolute Polar; Level 2+: Relative Polar
         let x = depth === 1 ? radius * Math.cos(rad) : parentX + this.config.radiusStep * Math.cos(rad);
         let y = depth === 1 ? radius * Math.sin(rad) : parentY + this.config.radiusStep * Math.sin(rad);
 
@@ -109,18 +112,24 @@ class TreeManager {
 
     resolveCollisions(node) {
         let attempts = 0;
+        // Optimization: Limit checks to nearby nodes via Spatial Hash
         while (attempts < 10) {
             let collision = false;
             const nearby = this.getNearbyNodes(node.x, node.y);
-            for (const other of nearby) {
+            
+            for (let i=0; i<nearby.length; i++) {
+                const other = nearby[i];
                 if (node.id === other.id) continue;
                 const dx = node.x - other.x;
                 const dy = node.y - other.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 90) {
+                const distSq = dx*dx + dy*dy;
+                
+                // 90px distance squared = 8100
+                if (distSq < 8100) { 
                     collision = true;
-                    node.x += (dx/dist || 1) * 15;
-                    node.y += (dy/dist || 1) * 15;
+                    const dist = Math.sqrt(distSq) || 1;
+                    node.x += (dx/dist) * 15;
+                    node.y += (dy/dist) * 15;
                 }
             }
             if (!collision) break;
@@ -134,7 +143,7 @@ class TreeManager {
         const midY = (y1 + y2) / 2;
         return {
             start: {x: x1, y: y1}, end: {x: x2, y: y2},
-            control: { x: midX, y: midY } // Simple quadratic for performance
+            control: { x: midX, y: midY }
         };
     }
 
@@ -144,13 +153,14 @@ class TreeManager {
         
         connectionContainer.innerHTML = this.connections.map(c => 
             `<path d="M ${c.from.x} ${c.from.y} Q ${c.control.x} ${c.control.y} ${c.to.x} ${c.to.y}" 
-                   stroke="${c.color}" stroke-width="${c.width}" fill="none" opacity="0.7" />`
+                   stroke="${SecurityManager.sanitizeColor(c.color)}" stroke-width="${c.width}" fill="none" opacity="0.7" />`
         ).join('');
 
+        // SECURITY FIX: Using sanitizeColor inside the template literal
         nodeContainer.innerHTML = this.nodes.map(n => 
             `<div class="mind-node ${n.type}" data-key="${n.id}" 
-                  style="left:${n.x}px; top:${n.y}px; border-color: ${n.color};" 
-                  role="button" tabindex="0" aria-label="${n.title}">
+                  style="left:${n.x}px; top:${n.y}px; border-color: ${SecurityManager.sanitizeColor(n.color)};" 
+                  role="button" tabindex="0" aria-label="${SecurityManager.sanitizeHTML(n.title)}">
                 ${SecurityManager.sanitizeHTML(n.title)}
             </div>`
         ).join('');

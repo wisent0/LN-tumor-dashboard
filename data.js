@@ -1,8 +1,8 @@
 // Lymphoma Data Module - WHO 5th Ed (2022)
 const medicalData = {
     metadata: {
-        version: "2.1.0",
-        lastUpdated: "2025-01-20",
+        version: "2.1.1",
+        lastUpdated: "2025-01-22",
         source: "WHO Classification of Haematolymphoid Tumours, 5th Ed",
         clinicalDisclaimer: "Educational use only. Not for primary diagnosis."
     },
@@ -27,9 +27,9 @@ const medicalData = {
     },
 
     // --- MATURE B-CELL ---
-    b_cell_cat: { title: "Mature B-Cell", tags:["CD20+", "PAX5+"], color: "#dc2626", content: "<div>Neoplasms of mature B-cells.</div>" },
+    b_cell_cat: { title: "Mature B-Cell", tags:["CD20+", "PAX5+"], content: "<div>Neoplasms of mature B-cells.</div>" },
     
-    small_b_cat: { title: "Small B-Cell", tags:["Low Grade"], color: "#dc2626", content: "<div><b>Diff Dx:</b> CD5+ (CLL, MCL), CD10+ (FL), Neg (MZL, LPL).</div>" },
+    small_b_cat: { title: "Small B-Cell", tags:["Low Grade"], content: "<div><b>Diff Dx:</b> CD5+ (CLL, MCL), CD10+ (FL), Neg (MZL, LPL).</div>" },
     cll_sll: {
         title: "CLL / SLL",
         tags: ["CD5+", "CD23+", "LEF1+"],
@@ -61,7 +61,7 @@ const medicalData = {
         content: `<div>"Hairy" projections, Annexin A1+, <i>BRAF</i> V600E.</div>`
     },
 
-    aggressive_b_cat: { title: "Aggressive B-Cell", tags:["High Grade"], color: "#dc2626", content: "<div>High Ki67, diffuse growth.</div>" },
+    aggressive_b_cat: { title: "Aggressive B-Cell", tags:["High Grade"], content: "<div>High Ki67, diffuse growth.</div>" },
     dlbcl: {
         title: "DLBCL, NOS",
         tags: ["Most Common"],
@@ -78,7 +78,7 @@ const medicalData = {
         content: `<div>Starry sky pattern. CD10+, BCL6+, Ki67~100%. <i>MYC</i> translocation.</div>`
     },
 
-    plasma_cat: { title: "Plasma Cell", tags:["CD138+"], color: "#dc2626", content: "<div>Terminally differentiated B-cells.</div>" },
+    plasma_cat: { title: "Plasma Cell", tags:["CD138+"], content: "<div>Terminally differentiated B-cells.</div>" },
     myeloma: {
         title: "Myeloma",
         tags: ["CRAB"],
@@ -86,8 +86,8 @@ const medicalData = {
     },
 
     // --- MATURE T-CELL ---
-    t_cell_cat: { title: "Mature T/NK-Cell", tags:["CD3+"], color: "#059669", content: "<div>Post-thymic T-cells.</div>" },
-    nodal_t_cat: { title: "Nodal T-Cell", tags:["Aggressive"], color: "#059669", content: "<div>Primary nodal involvement.</div>" },
+    t_cell_cat: { title: "Mature T/NK-Cell", tags:["CD3+"], content: "<div>Post-thymic T-cells.</div>" },
+    nodal_t_cat: { title: "Nodal T-Cell", tags:["Aggressive"], content: "<div>Primary nodal involvement.</div>" },
     ptcl: {
         title: "PTCL, NOS",
         tags: ["Exclusion"],
@@ -104,7 +104,7 @@ const medicalData = {
         content: `<div>Hallmark cells (kidney nuclei). CD30 intense. ALK+ (better prognosis) or ALK-.</div>`
     },
 
-    cut_t_cat: { title: "Cutaneous T-Cell", tags:["Skin"], color: "#059669", content: "<div>Primary skin involvement.</div>" },
+    cut_t_cat: { title: "Cutaneous T-Cell", tags:["Skin"], content: "<div>Primary skin involvement.</div>" },
     mf: {
         title: "Mycosis Fungoides",
         tags: ["Epidermotropism"],
@@ -115,10 +115,10 @@ const medicalData = {
         tags: ["Leukemic"],
         content: `<div>Triad: Erythroderma, Lymphadenopathy, Circulating Sézary cells.</div>`
     },
-    leukemic_t_cat: { title: "Leukemic T-Cell", tags:["Blood"], color: "#059669", content: "<div>T-PLL, T-LGL.</div>" },
+    leukemic_t_cat: { title: "Leukemic T-Cell", tags:["Blood"], content: "<div>T-PLL, T-LGL.</div>" },
 
     // --- HODGKIN ---
-    hodgkin_cat: { title: "Hodgkin", tags:["RS Cells"], color: "#7c3aed", content: "<div>Reed-Sternberg cells.</div>" },
+    hodgkin_cat: { title: "Hodgkin", tags:["RS Cells"], content: "<div>Reed-Sternberg cells.</div>" },
     chl: {
         title: "Classic CHL",
         tags: ["CD30+", "CD15+"],
@@ -131,7 +131,7 @@ const medicalData = {
     },
 
     // --- PRECURSOR ---
-    precursor_cat: { title: "Precursor", tags:["Blasts"], color: "#2563eb", content: "<div>Immature blasts (TdT+).</div>" },
+    precursor_cat: { title: "Precursor", tags:["Blasts"], content: "<div>Immature blasts (TdT+).</div>" },
     b_all: {
         title: "B-ALL",
         tags: ["CD19+", "TdT+"],
@@ -144,7 +144,7 @@ const medicalData = {
     },
 
     // --- HISTIOCYTIC ---
-    histio_cat: { title: "Histiocytic", tags:["CD68+"], color: "#d97706", content: "<div>Histiocyte/Dendritic neoplasms.</div>" },
+    histio_cat: { title: "Histiocytic", tags:["CD68+"], content: "<div>Histiocyte/Dendritic neoplasms.</div>" },
     lch: {
         title: "Langerhans Cell",
         tags: ["CD1a+", "Langerin"],
@@ -157,7 +157,7 @@ const medicalData = {
     },
 
     // --- IMMUNODEFICIENCY ---
-    id_cat: { title: "Immuno-deficiency", tags:["EBV", "Tx"], color: "#db2777", content: "<div>Post-transplant or HIV associated.</div>" },
+    id_cat: { title: "Immuno-deficiency", tags:["EBV", "Tx"], content: "<div>Post-transplant or HIV associated.</div>" },
     ptld: {
         title: "PTLD",
         tags: ["Transplant"],

@@ -11,10 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const connectionLayer = document.getElementById('connectionLayer');
         treeManager.render(nodeLayer, connectionLayer);
 
-        new AccessibilityManager().setupKeyboardNavigation();
+        const a11y = new AccessibilityManager();
+        a11y.setupKeyboardNavigation();
         new SearchManager(medicalData, treeManager);
 
-        // Zoom/Pan Logic
+        // --- Zoom/Pan Logic ---
         let state = { scale: 0.9, x: 0, y: 0, panning: false, startX:0, startY:0 };
         const wrapper = document.getElementById('canvasWrapper');
         const world = document.getElementById('canvasWorld');
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.y = wrapper.offsetHeight / 2;
         updateTransform();
 
+        // Mouse Events
         wrapper.addEventListener('mousedown', e => {
             if(e.target.closest('.mind-node')) return;
             state.panning = true;
@@ -45,30 +47,55 @@ document.addEventListener('DOMContentLoaded', () => {
             state.y = e.clientY - state.startY;
             updateTransform();
         });
+        
+        // Wheel Zoom
         wrapper.addEventListener('wheel', e => {
             e.preventDefault();
-            state.scale = Math.min(Math.max(0.3, state.scale * (e.deltaY < 0 ? 1.1 : 0.9)), 3);
+            const delta = e.deltaY < 0 ? 1.1 : 0.9;
+            state.scale = Math.min(Math.max(AppConfig.layout.minZoom, state.scale * delta), AppConfig.layout.maxZoom);
             updateTransform();
         });
-        document.getElementById('recenterBtn').addEventListener('click', () => {
+
+        // --- CRITICAL FIX: Zoom Button Event Listeners ---
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const recenterBtn = document.getElementById('recenterBtn');
+
+        if (zoomInBtn) zoomInBtn.addEventListener('click', () => {
+            state.scale = Math.min(state.scale * 1.2, AppConfig.layout.maxZoom);
+            updateTransform();
+        });
+
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => {
+            state.scale = Math.max(state.scale / 1.2, AppConfig.layout.minZoom);
+            updateTransform();
+        });
+
+        if (recenterBtn) recenterBtn.addEventListener('click', () => {
              state.x = wrapper.offsetWidth / 2;
              state.y = wrapper.offsetHeight / 2;
              state.scale = 0.9;
              updateTransform();
         });
 
-        // Detail Panel
+        // Detail Panel Rendering
         document.addEventListener('node-selected', (e) => {
             const item = medicalData[e.detail.key];
             const panel = document.getElementById('detailPanel');
             if (item) {
+                // Determine color based on config (Fixes data/config conflict)
+                const branchColor = AppConfig.branches[item.branchId]?.color || '#666';
+                
                 panel.innerHTML = `
-                    <div class="content-container">
+                    <div class="content-container" style="border-top: 4px solid ${SecurityManager.sanitizeColor(branchColor)}">
                         <h2 class="detail-title">${SecurityManager.sanitizeHTML(item.title)}</h2>
                         <div class="tag-group">${(item.tags||[]).map(t => `<span class="tag">${SecurityManager.sanitizeHTML(t)}</span>`).join('')}</div>
                         <div class="medical-content">${SecurityManager.sanitizeHTML(item.content)}</div>
                     </div>`;
                 panel.scrollTop = 0;
+                
+                // Accessibility Focus
+                panel.focus();
             }
         });
 
